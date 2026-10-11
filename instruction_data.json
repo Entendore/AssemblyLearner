@@ -1,0 +1,4231 @@
+{
+  "x86": {
+    "MOV": {
+      "opcode": "MOV",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Copy data from source to destination. The most fundamental instruction. Does not affect any flags. Source and destination must be the same size.",
+      "category": "Data Transfer",
+      "difficulty": 1,
+      "example": "MOV eax, 5",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Initializing variables and registers with values",
+        "Copying function arguments between registers",
+        "Loading immediate constants into registers",
+        "Storing computed results to memory locations",
+        "Setting up stack frame pointers (MOV ebp, esp)"
+      ],
+      "notes": "MOV is the most frequently used x86 instruction (~25% of all instructions in typical code). Cannot move between two memory operands directly. For moving between memory locations, use MOV reg, [mem] then MOV [mem2], reg.",
+      "syntax_variants": [
+        "MOV r/m8, imm8",
+        "MOV r/m16, imm16",
+        "MOV r/m32, imm32",
+        "MOV r/m, r",
+        "MOV r, r/m",
+        "MOV r/m64, imm64 (x86-64)"
+      ],
+      "see_also": [
+        "MOVSX",
+        "MOVZX",
+        "LEA",
+        "XCHG",
+        "CMOVcc"
+      ],
+      "architecture": "x86"
+    },
+    "MOVZX": {
+      "opcode": "MOVZX",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Move with zero extension. Copies a smaller value to a larger register, filling the upper bits with zeros. Commonly used to load unsigned bytes or words into 32-bit registers.",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "MOVZX eax, byte ptr [ebx]",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Loading unsigned byte/word from memory into a full register",
+        "Converting unsigned 8-bit or 16-bit values to 32-bit for arithmetic",
+        "Processing ASCII character data where sign extension would be wrong",
+        "Loading palette indices, port numbers, and other unsigned small values"
+      ],
+      "notes": "Always use MOVZX (not MOV) when loading unsigned data from smaller memory into a register. Using plain MOV would leave upper bits undefined.",
+      "syntax_variants": [
+        "MOVZX r32, r/m8",
+        "MOVZX r32, r/m16",
+        "MOVZX r64, r/m8 (x86-64)"
+      ],
+      "see_also": [
+        "MOVSX",
+        "MOV"
+      ],
+      "architecture": "x86"
+    },
+    "MOVSX": {
+      "opcode": "MOVSX",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Move with sign extension. Copies a smaller value to a larger register, extending the sign bit (bit 7 for bytes, bit 15 for words) into all upper bits.",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "MOVSX eax, al",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Loading signed bytes from memory (e.g., signed char in C)",
+        "Sign-extending 16-bit port I/O values to 32-bit",
+        "Converting signed short to int for arithmetic operations",
+        "Processing signed data from network protocols or file formats"
+      ],
+      "notes": "Essential for correct signed arithmetic. Without sign extension, a negative byte like 0xFF would become 255 instead of -1.",
+      "syntax_variants": [
+        "MOVSX r32, r/m8",
+        "MOVSX r32, r/m16",
+        "MOVSXD r64, r/m32 (x86-64)"
+      ],
+      "see_also": [
+        "MOVZX",
+        "MOV",
+        "CBW",
+        "CWDE",
+        "CDQ"
+      ],
+      "architecture": "x86"
+    },
+    "XCHG": {
+      "opcode": "XCHG",
+      "operands": [
+        "op1",
+        "op2"
+      ],
+      "description": "Exchange values between two operands. Both operands are swapped simultaneously. When used with the accumulator (EAX), it is smaller encoding.",
+      "category": "Data Transfer",
+      "difficulty": 2,
+      "example": "XCHG eax, ebx",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Implementing spinlocks (XCHG with memory is atomic)",
+        "Swapping two register values without a temporary register",
+        "Implementing mutex and semaphore primitives in OS kernels",
+        "Sorting algorithms that need to swap array elements"
+      ],
+      "notes": "XCHG with a memory operand implicitly locks the bus (has LOCK prefix), making it atomic. This is used for spinlock implementations. However, it is slower than separate MOV instructions for simple register swaps on modern CPUs.",
+      "syntax_variants": [
+        "XCHG r/m, r",
+        "XCHG r, r/m",
+        "XCHG eax, r (special short encoding)"
+      ],
+      "see_also": [
+        "MOV",
+        "CMPXCHG",
+        "LOCK"
+      ],
+      "architecture": "x86"
+    },
+    "LEA": {
+      "opcode": "LEA",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Load Effective Address. Computes the address specified by the source operand (without dereferencing it) and stores the result in the destination register. Does not access memory.",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "LEA eax, [ebx+ecx*4+10]",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Fast arithmetic: LEA eax, [ebx+ecx*4+10] computes ebx+ecx*4+10 without memory access",
+        "Common compiler optimization for multiplication by small constants",
+        "Computing array element addresses: base + index * element_size + offset",
+        "Replacing multiple ADD/SHL instructions with a single LEA",
+        "Getting pointer to struct field or array element"
+      ],
+      "notes": "LEA does NOT access memory - it only computes an address. This makes it a powerful arithmetic instruction. For example, LEA eax, [ebx+ebx] is equivalent to ADD eax, ebx but uses different execution units. Compilers use LEA extensively for address calculations and as a fast multiply-add instruction.",
+      "syntax_variants": [
+        "LEA r32, [mem]",
+        "LEA r64, [mem] (x86-64)"
+      ],
+      "see_also": [
+        "MOV",
+        "ADD",
+        "SHL"
+      ],
+      "architecture": "x86"
+    },
+    "MOVBE": {
+      "opcode": "MOVBE",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Move big-endian. Loads or stores data in big-endian byte order, performing byte swapping as part of the move.",
+      "category": "Data Transfer",
+      "difficulty": 4,
+      "example": "MOVBE eax, [esi]",
+      "cycles": 4,
+      "affects_flags": "None",
+      "use_cases": [
+        "Reading big-endian data from network packets",
+        "Loading big-endian values from file formats (e.g., JPEG, PNG headers)",
+        "Converting between little-endian (x86 native) and big-endian byte order",
+        "Processing protocol headers in network stack implementations"
+      ],
+      "notes": "Available on Intel processors since Nehalem. ARM native byte order is also big-endian in some configurations, making this useful for cross-platform code.",
+      "syntax_variants": [
+        "MOVBE r32, m32",
+        "MOVBE m32, r32"
+      ],
+      "see_also": [
+        "BSWAP",
+        "MOV"
+      ],
+      "architecture": "x86"
+    },
+    "CMOVcc": {
+      "opcode": "CMOVcc",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Conditional move. Moves data only if the specified condition is met (based on EFLAGS). Avoids branch misprediction penalties.",
+      "category": "Data Transfer",
+      "difficulty": 4,
+      "example": "CMOVZ eax, ebx  ; move if ZF=1",
+      "cycles": 1,
+      "affects_flags": "None (but reads flags)",
+      "use_cases": [
+        "Branchless min/max: CMOVG eax, ebx (eax = max(eax, ebx))",
+        "Branchless absolute value: CMOVL eax, ebx (negate if negative)",
+        "Eliminating branches in performance-critical code",
+        "Compiler-generated code for ternary operators (cond ? a : b)",
+        "Branchless clamping and saturation arithmetic"
+      ],
+      "notes": "CMOVcc instructions are the key to branchless programming. They eliminate branch misprediction penalties in if-else patterns. The source operand is always read from the register, but the destination is only written if the condition is true. Conditions: Z/NZ, C/NC, S/NS, O/NO, P/NP, A/AE/B/BE, G/GE/L/LE.",
+      "syntax_variants": [
+        "CMOVA",
+        "CMOVAE",
+        "CMOVB",
+        "CMOVBE",
+        "CMOVG",
+        "CMOVGE",
+        "CMOVL",
+        "CMOVLE",
+        "CMOVZ",
+        "CMOVNZ",
+        "CMOVS",
+        "CMOVNS",
+        "CMOVC",
+        "CMOVNC",
+        "CMOVO",
+        "CMOVNO",
+        "CMOVP",
+        "CMOVNP"
+      ],
+      "see_also": [
+        "MOV",
+        "SETcc",
+        "CMP"
+      ],
+      "architecture": "x86"
+    },
+    "SETcc": {
+      "opcode": "SETcc",
+      "operands": [
+        "dest"
+      ],
+      "description": "Set byte to condition code. Sets the destination byte register to 1 if the condition is true, 0 if false. Used for boolean expressions in compiled code.",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "SETE al  ; al = (ZF == 1) ? 1 : 0",
+      "cycles": 1,
+      "affects_flags": "None (reads flags)",
+      "use_cases": [
+        "Implementing boolean expressions: result = (a > b)",
+        "Computing comparison results for C relational operators",
+        "Building truth tables and logical operations",
+        "Compiler output for if-conditions stored in variables"
+      ],
+      "notes": "SETcc is how compilers implement C's comparison operators that return 0 or 1. For example, 'int x = (a > b);' compiles to CMP eax, ebx; SETG al. The result is always 0 or 1 in a byte register.",
+      "syntax_variants": [
+        "SETA",
+        "SETAE",
+        "SETB",
+        "SETBE",
+        "SETG",
+        "SETGE",
+        "SETL",
+        "SETLE",
+        "SETZ",
+        "SETNZ",
+        "SETS",
+        "SETNS",
+        "SETC",
+        "SETNC",
+        "SETO",
+        "SETNO",
+        "SETP",
+        "SETNP",
+        "SETE",
+        "SETNE"
+      ],
+      "see_also": [
+        "CMOVcc",
+        "CMP",
+        "TEST"
+      ],
+      "architecture": "x86"
+    },
+    "CBW": {
+      "opcode": "CBW",
+      "operands": [],
+      "description": "Convert Byte to Word. Sign-extends AL into AX.",
+      "category": "Data Transfer",
+      "difficulty": 2,
+      "example": "CBW",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Sign-extending a byte result to a word for division (IDIV)",
+        "Preparing a signed byte for word-sized arithmetic",
+        "Character processing where sign matters"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CWDE": {
+      "opcode": "CWDE",
+      "operands": [],
+      "description": "Convert Word to Doubleword. Sign-extends AX into EAX.",
+      "category": "Data Transfer",
+      "difficulty": 2,
+      "example": "CWDE",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Sign-extending a 16-bit value to 32-bit for IDIV",
+        "Preparing signed word results for 32-bit arithmetic",
+        "Interfacing with 16-bit APIs that return word-sized results"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CDQ": {
+      "opcode": "CDQ",
+      "operands": [],
+      "description": "Convert Doubleword to Quadword. Sign-extends EAX into EDX:EAX. Must be called before IDIV to sign-extend the dividend.",
+      "category": "Data Transfer",
+      "difficulty": 2,
+      "example": "CDQ",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Must be called before IDIV to sign-extend the dividend into EDX:EAX",
+        "Creating a 64-bit signed value from a 32-bit register pair",
+        "Preparing for 32-bit signed division"
+      ],
+      "notes": "ALWAYS call CDQ before IDIV if you want signed division. If you forget, EDX may contain garbage from a previous MUL, giving wrong results. For unsigned DIV, use XOR edx, edx instead.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CQO": {
+      "opcode": "CQO",
+      "operands": [],
+      "description": "Convert Quadword to Octaword (x86-64). Sign-extends RAX into RDX:RAX.",
+      "category": "Data Transfer",
+      "difficulty": 2,
+      "example": "CQO",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Prepares 64-bit dividend for IDIV in x86-64 mode"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BSWAP": {
+      "opcode": "BSWAP",
+      "operands": [
+        "reg"
+      ],
+      "description": "Byte swap. Reverses the byte order of a 32-bit or 64-bit register. Converts between little-endian and big-endian.",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "BSWAP eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Converting between little-endian and big-endian byte order",
+        "Network byte order conversion (htonl/ntohl implementation)",
+        "Reading big-endian file format headers on x86",
+        "Cryptography algorithms that need byte-level permutation"
+      ],
+      "notes": "BSWAP eax reverses bytes: ABCD becomes DCBA. This is the software equivalent of MOVBE but operates on registers only. Used extensively in TCP/IP networking for converting between network byte order (big-endian) and host byte order (little-endian on x86).",
+      "syntax_variants": [
+        "BSWAP r32",
+        "BSWAP r64 (x86-64)"
+      ],
+      "see_also": [
+        "MOVBE",
+        "ROL",
+        "ROR"
+      ],
+      "architecture": "x86"
+    },
+    "MOVSB": {
+      "opcode": "MOVSB",
+      "operands": [],
+      "description": "Move string byte: copy byte from [DS:ESI] to [ES:EDI]. Auto-increments/decrements ESI and EDI based on DF flag.",
+      "category": "String",
+      "difficulty": 4,
+      "example": "MOVSB",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Copying memory blocks (like memcpy)",
+        "Moving strings character by character",
+        "Implementing memcpy/memmove with REP prefix"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "MOVSW": {
+      "opcode": "MOVSW",
+      "operands": [],
+      "description": "Move string word: copy word from [DS:ESI] to [ES:EDI].",
+      "category": "String",
+      "difficulty": 4,
+      "example": "MOVSW",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Fast 16-bit memory copy"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "MOVSD": {
+      "opcode": "MOVSD",
+      "operands": [],
+      "description": "Move string dword: copy dword from [DS:ESI] to [ES:EDI]. Most commonly used string move for 32-bit data.",
+      "category": "String",
+      "difficulty": 4,
+      "example": "MOVSD",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "High-performance memory copying with REP MOVSD (like optimized memcpy)",
+        "Moving arrays of 32-bit integers",
+        "Copying struct arrays in memory"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "STOSB": {
+      "opcode": "STOSB",
+      "operands": [],
+      "description": "Store string byte: write AL to [ES:EDI].",
+      "category": "String",
+      "difficulty": 4,
+      "example": "STOSB",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Filling memory with a byte value (like memset)",
+        "Initializing buffers to zero with XOR eax,eax; REP STOSB"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "STOSD": {
+      "opcode": "STOSD",
+      "operands": [],
+      "description": "Store string dword: write EAX to [ES:EDI].",
+      "category": "String",
+      "difficulty": 4,
+      "example": "STOSD",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Fast memory fill with 32-bit pattern using REP STOSD",
+        "Initializing integer arrays to a specific value",
+        "Clearing large memory regions: XOR eax,eax; REP STOSD"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LODSB": {
+      "opcode": "LODSB",
+      "operands": [],
+      "description": "Load string byte: read byte from [DS:ESI] into AL.",
+      "category": "String",
+      "difficulty": 4,
+      "example": "LODSB",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Reading characters from a string for processing",
+        "Loading bytes from a buffer for hashing/checksum algorithms"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LODSD": {
+      "opcode": "LODSD",
+      "operands": [],
+      "description": "Load string dword: read dword from [DS:ESI] into EAX.",
+      "category": "String",
+      "difficulty": 4,
+      "example": "LODSD",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Reading 32-bit values from an array",
+        "Loading array elements for processing in a loop"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CMPSB": {
+      "opcode": "CMPSB",
+      "operands": [],
+      "description": "Compare string bytes: compare [DS:ESI] with [ES:EDI].",
+      "category": "String",
+      "difficulty": 4,
+      "example": "CMPSB",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Implementing strcmp: REPZ CMPSB / JNZ not_equal",
+        "Comparing memory blocks for equality",
+        "String searching and matching"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SCASB": {
+      "opcode": "SCASB",
+      "operands": [],
+      "description": "Scan string byte: compare AL with [ES:EDI].",
+      "category": "String",
+      "difficulty": 4,
+      "example": "SCASB",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Finding a character in a string (like strchr): REPNE SCASB",
+        "Implementing strlen: XOR al,al; MOV ecx,-1; REPNE SCASB",
+        "Searching for null terminators or delimiters"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "REP": {
+      "opcode": "REP",
+      "operands": [],
+      "description": "Repeat prefix: repeats the following string instruction ECX times.",
+      "category": "String",
+      "difficulty": 4,
+      "example": "REP MOVSD",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Fast memory copy: REP MOVSB/MOVSW/MOVSD (memcpy)",
+        "Fast memory fill: REP STOSB/STOSD (memset)",
+        "Used with MOVSB, MOVSW, MOVSD, STOSB, STOSD"
+      ],
+      "notes": "REP decrements ECX before each iteration and stops when ECX=0. With STOS, it fills memory. With MOVS, it copies memory. Always clear EDI/ESI direction with CLD before using REP on x86.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "REPE": {
+      "opcode": "REPE",
+      "operands": [],
+      "description": "Repeat while equal (ZF=1). Used with CMPS/SCAS for string comparison.",
+      "category": "String",
+      "difficulty": 5,
+      "example": "REPE CMPSB",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Implementing memcmp: REPE CMPSB compares bytes while they match",
+        "Finding the first differing byte between two strings"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "REPNE": {
+      "opcode": "REPNE",
+      "operands": [],
+      "description": "Repeat while not equal (ZF=0). Used with SCAS to find a character.",
+      "category": "String",
+      "difficulty": 5,
+      "example": "REPNE SCASB",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Implementing strchr: REPNE SCASB finds first occurrence of AL in string",
+        "Implementing strlen: REPNE SCASB with AL=0 finds null terminator"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "PUSH": {
+      "opcode": "PUSH",
+      "operands": [
+        "src"
+      ],
+      "description": "Push value onto the stack. Decrements ESP by 4 (32-bit) or 8 (64-bit) and stores the value at [ESP].",
+      "category": "Stack",
+      "difficulty": 2,
+      "example": "PUSH eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Saving register values before function calls (callee-saved registers)",
+        "Passing function arguments (cdecl calling convention pushes right-to-left)",
+        "Storing temporary values that exceed available registers",
+        "Setting up function parameters before CALL"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "POP": {
+      "opcode": "POP",
+      "operands": [
+        "dest"
+      ],
+      "description": "Pop value from the stack. Loads value from [ESP] and increments ESP by 4 (32-bit) or 8 (64-bit).",
+      "category": "Stack",
+      "difficulty": 2,
+      "example": "POP eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Restoring saved register values after function calls",
+        "Retrieving function return values in some calling conventions",
+        "Cleaning up stack arguments after cdecl function calls"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "PUSHF": {
+      "opcode": "PUSHF",
+      "operands": [],
+      "description": "Push EFLAGS register onto the stack.",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "PUSHF",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Saving flag state before code that modifies flags",
+        "Implementing interrupt handlers that need to preserve flags"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "POPF": {
+      "opcode": "POPF",
+      "operands": [],
+      "description": "Pop EFLAGS register from the stack. Restores all flag values.",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "POPF",
+      "cycles": 3,
+      "affects_flags": "All",
+      "use_cases": [
+        "Restoring flag state after interrupt handling",
+        "Flag manipulation by modifying stack values then popping"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "PUSHA": {
+      "opcode": "PUSHA",
+      "operands": [],
+      "description": "Push all general-purpose registers (EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI) onto the stack.",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "PUSHA",
+      "cycles": 5,
+      "affects_flags": "None",
+      "use_cases": [
+        "Saving complete register state in interrupt handlers",
+        "Context switching in simple operating systems",
+        "Quick save of all registers before complex operations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "POPA": {
+      "opcode": "POPA",
+      "operands": [],
+      "description": "Pop all general-purpose registers from the stack (reverse order of PUSHA).",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "POPA",
+      "cycles": 5,
+      "affects_flags": "None",
+      "use_cases": [
+        "Restoring complete register state after interrupt handling",
+        "Context restoration in simple OS kernels"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "PUSHAD": {
+      "opcode": "PUSHAD",
+      "operands": [],
+      "description": "64-bit push all registers (x86-64).",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "PUSHAD",
+      "cycles": 8,
+      "affects_flags": "None",
+      "use_cases": [
+        "Saving all registers in 64-bit mode"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "ENTER": {
+      "opcode": "ENTER",
+      "operands": [
+        "size",
+        "nesting"
+      ],
+      "description": "Create a stack frame for high-level language procedures. Equivalent to PUSH ebp; MOV ebp, esp; SUB esp, size.",
+      "category": "Stack",
+      "difficulty": 4,
+      "example": "ENTER 8, 0",
+      "cycles": 10,
+      "affects_flags": "None",
+      "use_cases": [
+        "Setting up stack frames in C/C++ compiled functions",
+        "Creating nested stack frames for Pascal-style nested procedures",
+        "Function prologue in compiled code"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LEAVE": {
+      "opcode": "LEAVE",
+      "operands": [],
+      "description": "Destroy a stack frame. Equivalent to MOV esp, ebp; POP ebp.",
+      "category": "Stack",
+      "difficulty": 3,
+      "example": "LEAVE",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Function epilogue to destroy the stack frame",
+        "Complement to ENTER instruction in function cleanup"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "ADD": {
+      "opcode": "ADD",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Add source to destination. dest += src. Affects all arithmetic flags.",
+      "category": "Arithmetic",
+      "difficulty": 1,
+      "example": "ADD eax, 5",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Incrementing counters and loop variables",
+        "Accumulating sums and running totals",
+        "Calculating array offsets: base + index * size",
+        "Adjusting pointer addresses",
+        "Building up results in mathematical computations"
+      ],
+      "notes": "ADD is one of the most commonly used arithmetic instructions. CF is set if there is an unsigned overflow (carry out). OF is set if there is a signed overflow. ZF is set if the result is zero. PF reflects parity of the low 8 bits.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SUB": {
+      "opcode": "SUB",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Subtract source from destination. dest -= src. Affects all arithmetic flags.",
+      "category": "Arithmetic",
+      "difficulty": 1,
+      "example": "SUB eax, 5",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Decrementing counters and loop variables",
+        "Calculating differences between values",
+        "Adjusting stack pointer: SUB esp, 8 to allocate local variables",
+        "Computing remainders and offsets"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "MUL": {
+      "opcode": "MUL",
+      "operands": [
+        "src"
+      ],
+      "description": "Unsigned multiply: EDX:EAX = EAX * src. The 64-bit result spans two registers.",
+      "category": "Arithmetic",
+      "difficulty": 3,
+      "example": "MUL ebx",
+      "cycles": 10,
+      "affects_flags": "CF OF",
+      "use_cases": [
+        "Multiplying unsigned 32-bit values to get 64-bit results",
+        "Computing array offsets with large indices",
+        "Graphics calculations requiring high-precision multiplication",
+        "Hash and checksum computations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "IMUL": {
+      "opcode": "IMUL",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Signed multiply. Two-operand form: dest = dest * src (truncated to dest size).",
+      "category": "Arithmetic",
+      "difficulty": 3,
+      "example": "IMUL eax, ebx",
+      "cycles": 10,
+      "affects_flags": "CF OF ZF SF PF",
+      "use_cases": [
+        "Multiplying signed integers in general computation",
+        "Computing array indices with signed offsets",
+        "Scale factor multiplication in graphics transforms",
+        "Price and financial calculations with signed values"
+      ],
+      "notes": "IMUL has three forms: (1) one operand: RDX:RAX = RAX * src, (2) two operand: dest = dest * src, (3) three operand: dest = src1 * src2. The two/three operand forms are most commonly used by compilers because they don't clobber the EDX register.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "DIV": {
+      "opcode": "DIV",
+      "operands": [
+        "src"
+      ],
+      "description": "Unsigned divide: EAX = (EDX:EAX) / src, EDX = remainder. ALWAYS clear EDX first!",
+      "category": "Arithmetic",
+      "difficulty": 4,
+      "example": "DIV ecx",
+      "cycles": 20,
+      "affects_flags": "Undefined",
+      "use_cases": [
+        "Dividing unsigned values for averaging calculations",
+        "Computing quotients and remainders (mod operation)",
+        "Converting linear addresses to page/offset",
+        "Computing array indices from byte offsets"
+      ],
+      "notes": "CRITICAL: Always XOR edx, edx before DIV to clear the upper 32 bits of the dividend. If EDX >= divisor, you get a divide error exception. Division by zero also causes an exception. DIV is one of the slowest integer instructions (20-40 cycles).",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "IDIV": {
+      "opcode": "IDIV",
+      "operands": [
+        "src"
+      ],
+      "description": "Signed divide: EAX = (EDX:EAX) / src, EDX = remainder. ALWAYS sign-extend with CDQ first!",
+      "category": "Arithmetic",
+      "difficulty": 4,
+      "example": "IDIV ecx",
+      "cycles": 22,
+      "affects_flags": "Undefined",
+      "use_cases": [
+        "Dividing signed integers (positive and negative values)",
+        "Computing signed quotients in financial calculations",
+        "Averaging signed sample values in DSP",
+        "Computing signed array indices"
+      ],
+      "notes": "CRITICAL: Always CDQ before IDIV to sign-extend EAX into EDX:EAX. If you forget, EDX may contain garbage, causing wrong results or division overflow exception. IDIV rounds toward zero (truncation), not toward negative infinity.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "INC": {
+      "opcode": "INC",
+      "operands": [
+        "op"
+      ],
+      "description": "Increment by 1. Preserves CF (carry flag). All other arithmetic flags are affected.",
+      "category": "Arithmetic",
+      "difficulty": 1,
+      "example": "INC eax",
+      "cycles": 1,
+      "affects_flags": "ZF SF OF PF",
+      "use_cases": [
+        "Incrementing loop counters (faster than ADD reg, 1 on old CPUs)",
+        "Advancing array indices and pointers",
+        "Incrementing counters in performance-critical tight loops"
+      ],
+      "notes": "INC preserves CF, which is useful when building multi-word arithmetic (e.g., ADC chains). On modern CPUs, ADD reg, 1 is often equally fast or faster due to better macro-fusion properties with subsequent Jcc instructions.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "DEC": {
+      "opcode": "DEC",
+      "operands": [
+        "op"
+      ],
+      "description": "Decrement by 1. Preserves CF (carry flag).",
+      "category": "Arithmetic",
+      "difficulty": 1,
+      "example": "DEC eax",
+      "cycles": 1,
+      "affects_flags": "ZF SF OF PF",
+      "use_cases": [
+        "Decrementing loop counters",
+        "Counting down in countdown loops",
+        "Resource deallocation counters"
+      ],
+      "notes": "Like INC, DEC preserves CF. DEC followed by JNZ is a common loop pattern. On modern CPUs, the flag preservation property can prevent macro-fusion with Jcc, making SUB reg, 1 sometimes preferable.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "NEG": {
+      "opcode": "NEG",
+      "operands": [
+        "op"
+      ],
+      "description": "Two's complement negation: dest = 0 - dest. Sets CF=1 if operand is non-zero.",
+      "category": "Arithmetic",
+      "difficulty": 2,
+      "example": "NEG eax",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Computing two's complement of a value",
+        "Implementing subtraction using addition: SUB a,b = ADD a, NEG(b)",
+        "Computing absolute value: CDQ; XOR eax, edx; SUB eax, edx",
+        "Negating error codes and offsets"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "ADC": {
+      "opcode": "ADC",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Add with carry: dest = dest + src + CF. Essential for multi-word arithmetic.",
+      "category": "Arithmetic",
+      "difficulty": 3,
+      "example": "ADC eax, ebx",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Adding 64-bit values on 32-bit CPU: ADD low; ADC high",
+        "Multi-precision arithmetic (arbitrary-precision integers)",
+        "Adding values larger than register width",
+        "Carry-propagating addition chains in big number libraries"
+      ],
+      "notes": "ADC is the cornerstone of multi-word arithmetic. For a 64-bit addition on 32-bit x86: ADD eax, [low]; ADC edx, [high]. The carry from the low 32-bit addition automatically propagates via CF to the high 32-bit addition.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SBB": {
+      "opcode": "SBB",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Subtract with borrow: dest = dest - src - CF. Essential for multi-word subtraction.",
+      "category": "Arithmetic",
+      "difficulty": 3,
+      "example": "SBB eax, ebx",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Subtracting 64-bit values on 32-bit CPU: SUB low; SBB high",
+        "Multi-precision subtraction for big integer libraries",
+        "Implementing 64-bit comparison on 32-bit systems"
+      ],
+      "notes": "SBB is the subtraction counterpart of ADC. For a 64-bit subtraction on 32-bit x86: SUB eax, [low]; SBB edx, [high]. The borrow from the low 32-bit subtraction propagates via CF.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "XADD": {
+      "opcode": "XADD",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Exchange and Add: temp = dest; dest = dest + src; src = temp. Atomic version available with LOCK prefix.",
+      "category": "Arithmetic",
+      "difficulty": 4,
+      "example": "XADD eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Atomic counter increment (LOCK XADD)",
+        "Implementing thread-safe reference counting",
+        "Lock-free data structure operations",
+        "Atomic fetch-and-add patterns in concurrent programming"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "AAA": {
+      "opcode": "AAA",
+      "operands": [],
+      "description": "ASCII Adjust after Addition. Adjusts AL after BCD addition.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "ADD al, 5; AAA",
+      "cycles": 3,
+      "affects_flags": "AF CF",
+      "use_cases": [
+        "BCD (Binary-Coded Decimal) arithmetic for financial applications",
+        "Processing decimal digit strings"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "AAS": {
+      "opcode": "AAS",
+      "operands": [],
+      "description": "ASCII Adjust after Subtraction. Adjusts AL after BCD subtraction.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "AAS",
+      "cycles": 3,
+      "affects_flags": "AF CF",
+      "use_cases": [
+        "BCD subtraction for financial calculations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "AAM": {
+      "opcode": "AAM",
+      "operands": [],
+      "description": "ASCII Adjust after Multiplication. Adjusts AX after BCD multiply.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "AAM",
+      "cycles": 3,
+      "affects_flags": "SF ZF PF",
+      "use_cases": [
+        "BCD multiplication"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "AAD": {
+      "opcode": "AAD",
+      "operands": [],
+      "description": "ASCII Adjust before Division. Adjusts AX before BCD divide.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "AAD",
+      "cycles": 3,
+      "affects_flags": "SF ZF PF",
+      "use_cases": [
+        "BCD division"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "DAA": {
+      "opcode": "DAA",
+      "operands": [],
+      "description": "Decimal Adjust after Addition. Adjusts AL for BCD addition result.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "DAA",
+      "cycles": 3,
+      "affects_flags": "SF ZF AF CF PF",
+      "use_cases": [
+        "Packed BCD addition adjustment"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "DAS": {
+      "opcode": "DAS",
+      "operands": [],
+      "description": "Decimal Adjust after Subtraction. Adjusts AL for BCD subtraction result.",
+      "category": "Arithmetic",
+      "difficulty": 5,
+      "example": "DAS",
+      "cycles": 3,
+      "affects_flags": "SF ZF AF CF PF",
+      "use_cases": [
+        "Packed BCD subtraction adjustment"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "AND": {
+      "opcode": "AND",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Bitwise AND. Clears bits where src has 0, preserves bits where src has 1. CF=OF=0, updates ZF/SF/PF.",
+      "category": "Logical",
+      "difficulty": 2,
+      "example": "AND eax, 0xFF",
+      "cycles": 1,
+      "affects_flags": "ZF SF PF (CF=OF=0)",
+      "use_cases": [
+        "Masking/extracting specific bits: AND eax, 0xFF extracts low byte",
+        "Clearing specific bits (bit masking): AND eax, ~0x10 clears bit 4",
+        "Checking if a number is even/odd: AND eax, 1; JZ is_even",
+        "Implementing modulo by power of 2: AND eax, (n-1) for mod 2^n",
+        "Clearing the upper bits of a register"
+      ],
+      "notes": "AND with 0xFF extracts the low byte, AND with 0xF extracts a nibble. AND eax, eax is NOT a no-op - it sets ZF based on whether eax is zero (useful before JE). AND always clears CF and OF.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "OR": {
+      "opcode": "OR",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Bitwise OR. Sets bits where src has 1, preserves bits where src has 0. CF=OF=0.",
+      "category": "Logical",
+      "difficulty": 2,
+      "example": "OR eax, ebx",
+      "cycles": 1,
+      "affects_flags": "ZF SF PF (CF=OF=0)",
+      "use_cases": [
+        "Setting specific bits: OR eax, 0x10 sets bit 4",
+        "Combining flags or option bits: OR eax, FLAG_A | FLAG_B",
+        "Setting up memory protection flags in page tables",
+        "Enabling features by OR-ing feature bits"
+      ],
+      "notes": "OR always clears CF and OF, which makes TEST (which is AND without storing) and OR both clear CF/OF. OR reg, reg also sets ZF based on whether the register is zero.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "XOR": {
+      "opcode": "XOR",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Bitwise XOR. Toggles bits where src has 1. CF=OF=0.",
+      "category": "Logical",
+      "difficulty": 2,
+      "example": "XOR eax, eax",
+      "cycles": 1,
+      "affects_flags": "ZF SF PF (CF=OF=0)",
+      "use_cases": [
+        "Fastest way to zero a register: XOR eax, eax (2 bytes, 1 cycle, breaks dependencies)",
+        "Toggling/flipping specific bits",
+        "XOR swap algorithm: XCHG without temporary",
+        "Simple encryption and hash functions",
+        "Computing checksums and parity"
+      ],
+      "notes": "XOR eax, eax is the idiomatic way to zero a register in x86 assembly. It is preferred over MOV eax, 0 because: (1) it is shorter encoding (2 bytes vs 5 bytes), (2) it explicitly breaks register dependency chains on out-of-order CPUs, (3) it sets ZF=1 which can be useful. XOR is its own inverse, making it fundamental in cryptography.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "NOT": {
+      "opcode": "NOT",
+      "operands": [
+        "op"
+      ],
+      "description": "Bitwise NOT (one's complement). Flips all bits. Does NOT affect any flags.",
+      "category": "Logical",
+      "difficulty": 2,
+      "example": "NOT eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Computing one's complement (bitwise negation)",
+        "Computing bitmask for clearing: NOT mask gives the inverse mask",
+        "Creating bit patterns for AND operations",
+        "Combined with INC to get two's complement: NOT eax; INC eax = NEG eax"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SHL": {
+      "opcode": "SHL",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Shift left logical. Fills vacated low bits with zeros. Equivalent to unsigned multiply by 2^count.",
+      "category": "Shift/Rotate",
+      "difficulty": 2,
+      "example": "SHL eax, 2",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Fast multiplication by powers of 2: SHL eax, 3 multiplies by 8",
+        "Aligning bits to specific positions",
+        "Building values bit by bit in serialization",
+        "Implementing multiplication by constants: x*10 = (x<<3)+(x<<1)"
+      ],
+      "notes": "SHL is the fundamental fast-multiplication instruction. On modern CPUs, SHL by a constant is 1 cycle. SHL by CL takes more. CF receives the last bit shifted out. If count > 31, only count mod 32 matters.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SHR": {
+      "opcode": "SHR",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Shift right logical. Fills vacated high bits with zeros. Equivalent to unsigned divide by 2^count.",
+      "category": "Shift/Rotate",
+      "difficulty": 2,
+      "example": "SHR eax, 1",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Fast unsigned division by powers of 2: SHR eax, 3 divides by 8",
+        "Extracting specific bit fields from a value",
+        "Converting a value to unsigned by shifting right",
+        "Processing bits from MSB to LSB"
+      ],
+      "notes": "SHR fills with zeros (unsigned division). Use SAR for signed division. SHR eax, 1 is the standard way to get the quotient of unsigned eax / 2. The remainder (eax & 1) can be tested separately.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SAR": {
+      "opcode": "SAR",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Shift arithmetic right. Fills vacated high bits with the sign bit (bit 31). Preserves sign for signed division.",
+      "category": "Shift/Rotate",
+      "difficulty": 3,
+      "example": "SAR eax, 2",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Fast signed division by powers of 2: SAR eax, 1 divides by 2 preserving sign",
+        "Implementing signed integer division by constants",
+        "Arithmetic right shift for signed values",
+        "Computing floor(a/2) for negative numbers"
+      ],
+      "notes": "SAR is critical for correct signed division. SHR of -16 (0xFFFFFFF0) by 2 gives 0x3FFFFFFC (huge positive number), but SAR gives 0xFFFFFFFC (-4, correct). The difference is that SAR propagates the sign bit.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SAL": {
+      "opcode": "SAL",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Shift arithmetic left. Identical to SHL on all x86 processors.",
+      "category": "Shift/Rotate",
+      "difficulty": 2,
+      "example": "SAL eax, 2",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Alias for SHL - they produce identical results on x86"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "ROL": {
+      "opcode": "ROL",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Rotate left. Bits shifted out on the left reappear on the right. CF = new LSB (last bit rotated).",
+      "category": "Shift/Rotate",
+      "difficulty": 3,
+      "example": "ROL eax, 8",
+      "cycles": 1,
+      "affects_flags": "CF OF",
+      "use_cases": [
+        "Rotating bits within a register without losing any",
+        "Cyclic permutation of bit fields",
+        "Encryption algorithms (rotation ciphers, RC5/RC6)",
+        "Bit manipulation in hashing algorithms",
+        "Swapping byte order within a register: ROL eax, 8"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "ROR": {
+      "opcode": "ROR",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Rotate right. Bits shifted out on the right reappear on the left. CF = new MSB (last bit rotated).",
+      "category": "Shift/Rotate",
+      "difficulty": 3,
+      "example": "ROR eax, 8",
+      "cycles": 1,
+      "affects_flags": "CF OF",
+      "use_cases": [
+        "Cyclic bit rotation in cryptography",
+        "Aligning bit fields by rotating",
+        "Extracting groups of bits from the opposite end"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "RCL": {
+      "opcode": "RCL",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Rotate through carry left. CF is included in the rotation as a 33rd bit.",
+      "category": "Shift/Rotate",
+      "difficulty": 4,
+      "example": "RCL eax, 1",
+      "cycles": 1,
+      "affects_flags": "CF OF",
+      "use_cases": [
+        "Multi-bit rotation across carry flag",
+        "Implementing bit-by-bit rotation for arbitrary sizes",
+        "Cryptographic algorithms that incorporate the carry bit"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "RCR": {
+      "opcode": "RCR",
+      "operands": [
+        "dest",
+        "count"
+      ],
+      "description": "Rotate through carry right. CF is included in the rotation as a 33rd bit.",
+      "category": "Shift/Rotate",
+      "difficulty": 4,
+      "example": "RCR eax, 1",
+      "cycles": 1,
+      "affects_flags": "CF OF",
+      "use_cases": [
+        "Multi-bit rotation incorporating carry",
+        "Restoring bit position from carry flag"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SHLD": {
+      "opcode": "SHLD",
+      "operands": [
+        "dest",
+        "src",
+        "count"
+      ],
+      "description": "Double precision shift left. Shifts dest left by count, filling vacated bits with high bits of src.",
+      "category": "Shift/Rotate",
+      "difficulty": 4,
+      "example": "SHLD eax, edx, 4",
+      "cycles": 3,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Bit manipulation across two registers",
+        "Shifting multi-word values left",
+        "Implementing 64-bit shifts on 32-bit registers"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SHRD": {
+      "opcode": "SHRD",
+      "operands": [
+        "dest",
+        "src",
+        "count"
+      ],
+      "description": "Double precision shift right. Shifts dest right by count, filling vacated bits with low bits of src.",
+      "category": "Shift/Rotate",
+      "difficulty": 4,
+      "example": "SHRD eax, edx, 4",
+      "cycles": 3,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Shifting multi-word values right",
+        "Implementing 64-bit right shifts on 32-bit registers"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BT": {
+      "opcode": "BT",
+      "operands": [
+        "bit_base",
+        "bit_offset"
+      ],
+      "description": "Bit Test. Copies the specified bit into CF without modifying the operand.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BT eax, 3",
+      "cycles": 3,
+      "affects_flags": "CF",
+      "use_cases": [
+        "Testing if a specific bit is set in a register or memory",
+        "Checking status bits in flags registers",
+        "Testing individual bits in bitmaps and bit fields"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BTS": {
+      "opcode": "BTS",
+      "operands": [
+        "bit_base",
+        "bit_offset"
+      ],
+      "description": "Bit Test and Set. Copies the specified bit into CF, then sets it to 1.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BTS eax, 5",
+      "cycles": 3,
+      "affects_flags": "CF",
+      "use_cases": [
+        "Atomically setting a bit (with LOCK prefix)",
+        "Allocating resources from a bitmap allocator",
+        "Setting feature flags"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BTR": {
+      "opcode": "BTR",
+      "operands": [
+        "bit_base",
+        "bit_offset"
+      ],
+      "description": "Bit Test and Reset. Copies the specified bit into CF, then clears it to 0.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BTR eax, 5",
+      "cycles": 3,
+      "affects_flags": "CF",
+      "use_cases": [
+        "Atomically clearing a bit (with LOCK prefix)",
+        "Freeing resources in a bitmap allocator",
+        "Clearing feature flags"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BTC": {
+      "opcode": "BTC",
+      "operands": [
+        "bit_base",
+        "bit_offset"
+      ],
+      "description": "Bit Test and Complement. Copies the specified bit into CF, then toggles it.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BTC eax, 5",
+      "cycles": 3,
+      "affects_flags": "CF",
+      "use_cases": [
+        "Toggling a bit atomically (with LOCK prefix)",
+        "Implementing mutex toggle operations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BSF": {
+      "opcode": "BSF",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Bit Scan Forward. Finds the index of the first set bit (from LSB).",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BSF eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF",
+      "use_cases": [
+        "Finding the lowest set bit (trailing zero count)",
+        "Finding the position of the least significant 1-bit",
+        "Computing log2 of a power of 2",
+        "Bit field extraction and manipulation"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "BSR": {
+      "opcode": "BSR",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Bit Scan Reverse. Finds the index of the highest set bit (from MSB).",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "BSR eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF",
+      "use_cases": [
+        "Finding the highest set bit (finding the bit width)",
+        "Computing floor(log2(x))",
+        "Finding the most significant bit position",
+        "Normalizing floating-point numbers"
+      ],
+      "notes": "BSR eax, eax computes floor(log2(eax)) + 1 if eax != 0. This is useful for computing the number of bits needed to represent a value, or for normalizing integers.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "POPCNT": {
+      "opcode": "POPCNT",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Population count. Counts the number of set bits (1-bits) in the operand.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "POPCNT eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF CF OF SF PF (undefined in some docs)",
+      "use_cases": [
+        "Hamming weight / population count for error detection codes",
+        "Counting set bits in hash functions",
+        "Computing Hamming distance between values",
+        "Bitmask density analysis"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LZCNT": {
+      "opcode": "LZCNT",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Leading zero count. Counts the number of leading zero bits.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "LZCNT eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF CF OF SF PF",
+      "use_cases": [
+        "Computing the number of leading zeros (CLZ operation)",
+        "Implementing floor(log2(x))",
+        "Floating-point normalization",
+        "Finding the highest power of 2 <= x"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "TZCNT": {
+      "opcode": "TZCNT",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Trailing zero count. Counts the number of trailing zero bits.",
+      "category": "Bit Manipulation",
+      "difficulty": 3,
+      "example": "TZCNT eax, ebx",
+      "cycles": 3,
+      "affects_flags": "ZF CF OF SF PF",
+      "use_cases": [
+        "Finding the position of the lowest set bit",
+        "Implementing FFS (find first set) operation",
+        "Bit scanning from the least significant end"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CMP": {
+      "opcode": "CMP",
+      "operands": [
+        "op1",
+        "op2"
+      ],
+      "description": "Compare: computes op1 - op2 and sets flags without storing the result. The foundation of all conditional branching.",
+      "category": "Comparison",
+      "difficulty": 2,
+      "example": "CMP eax, 5",
+      "cycles": 1,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Comparing values before conditional jumps (if/else in assembly)",
+        "Checking loop termination conditions",
+        "Implementing equality/inequality tests",
+        "Range checking: CMP eax, 100; JA too_big",
+        "Implementing all relational operators (<, >, <=, >=, ==, !=)"
+      ],
+      "notes": "CMP is SUB without storing the result. After CMP a,b: ZF=1 means a==b, CF=1 means a<b (unsigned), SF!=OF means a<b (signed). Every if/else, for, while in C compiles to a CMP followed by a Jcc instruction.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "TEST": {
+      "opcode": "TEST",
+      "operands": [
+        "op1",
+        "op2"
+      ],
+      "description": "Bitwise AND without storing result. Sets flags based on the AND result. CF=OF=0.",
+      "category": "Comparison",
+      "difficulty": 2,
+      "example": "TEST eax, eax",
+      "cycles": 1,
+      "affects_flags": "ZF SF PF (CF=OF=0)",
+      "use_cases": [
+        "Checking if a value is zero: TEST eax, eax; JZ is_zero",
+        "Testing specific bits: TEST eax, 0x10; JNZ bit4_set",
+        "Checking even/odd: TEST eax, 1; JZ is_even",
+        "Checking if multiple flags are set: TEST eax, (FLAG_A | FLAG_B)",
+        "Fastest zero-check: compilers use TEST instead of CMP reg, 0"
+      ],
+      "notes": "TEST is preferred over CMP reg, 0 because it is one byte shorter (TEST r/m, r) and has the same effect for zero-checking. TEST al, 0xFF checks if any of the low 8 bits are set.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CMPXCHG": {
+      "opcode": "CMPXCHG",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Compare and Exchange. Compares AL/AX/EAX with dest; if equal, src is stored in dest; otherwise dest is loaded into AL/AX/EAX.",
+      "category": "Comparison",
+      "difficulty": 5,
+      "example": "CMPXCHG [mem], ebx",
+      "cycles": 6,
+      "affects_flags": "ZF SF CF OF PF",
+      "use_cases": [
+        "Implementing atomic compare-and-swap (CAS) for lock-free algorithms",
+        "Building spinlocks and mutexes",
+        "Implementing lock-free stacks, queues, and linked lists",
+        "Atomic reference count updates"
+      ],
+      "notes": "CMPXCHG is the foundation of all lock-free data structures. With LOCK prefix, it atomically compares and exchanges a memory value. The pattern: MOV eax, expected; LOCK CMPXCHG [mem], new_value; JZ success (ZF=1 means values matched).",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CMPXCHG8B": {
+      "opcode": "CMPXCHG8B",
+      "operands": [
+        "mem64"
+      ],
+      "description": "Compare and exchange 8 bytes. Compares EDX:EAX with mem64; if equal, ECX:EBX is stored.",
+      "category": "Comparison",
+      "difficulty": 5,
+      "example": "CMPXCHG8B [ebx]",
+      "cycles": 10,
+      "affects_flags": "ZF",
+      "use_cases": [
+        "64-bit atomic compare-and-swap on 32-bit CPUs",
+        "Implementing double-width lock-free operations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JMP": {
+      "opcode": "JMP",
+      "operands": [
+        "target"
+      ],
+      "description": "Unconditional jump. Transfers control to the target address. Always taken.",
+      "category": "Control Flow",
+      "difficulty": 1,
+      "example": "JMP loop_start",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Infinite loops: loop_start: ... JMP loop_start",
+        "Implementing else branches: JZ then; JMP end; else:",
+        "Tail call optimization: JMP instead of CALL + RET",
+        "Jumping to error handling or cleanup code",
+        "Implementing switch statement fall-through"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JE": {
+      "opcode": "JE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Equal (ZF=1). Also known as JZ.",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JE done",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Implementing equality checks: if (a == b)",
+        "Checking loop termination: DEC ecx; JNZ loop",
+        "Testing zero result: TEST eax, eax; JE is_zero"
+      ],
+      "notes": "JE and JZ are the same instruction with different mnemonics. JE is used after CMP for readability. JZ is used after TEST or arithmetic for checking zero.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JNE": {
+      "opcode": "JNE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Not Equal (ZF=0). Also known as JNZ.",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JNE retry",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Loop continuation: CMP ecx, 0; JNE loop",
+        "Not-equal branch: CMP eax, ebx; JNE not_equal",
+        "Non-zero check: TEST eax, eax; JNE has_value"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JG": {
+      "opcode": "JG",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Greater (signed). ZF=0 AND SF=OF.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JG greater",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Signed greater-than comparison: if (a > b) in C with signed types",
+        "Implementing signed max() and sorting comparisons",
+        "Range checks with signed values"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JL": {
+      "opcode": "JL",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Less (signed). SF != OF.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JL less",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Signed less-than comparison: if (a < b) in C with signed types",
+        "Implementing signed min() comparisons",
+        "Error checking: CMP eax, -1; JL error"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JA": {
+      "opcode": "JA",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Above (unsigned). CF=0 AND ZF=0.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JA above",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Unsigned greater-than: comparing sizes, lengths, addresses",
+        "Buffer overflow checks: CMP index, max_size; JA overflow",
+        "Pointer comparison: CMP ptr, end_ptr; JA past_end"
+      ],
+      "notes": "Using JA/JB for signed values is a common bug! Always use JG/JL for signed (int), and JA/JB for unsigned (size_t, pointers).",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JB": {
+      "opcode": "JB",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Below (unsigned). CF=1.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JB below",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Unsigned less-than: if (size < capacity)",
+        "Bounds checking: CMP index, length; JB out_of_bounds",
+        "Carry check after addition: ADC; JB overflow"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JGE": {
+      "opcode": "JGE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Greater or Equal (signed). SF=OF.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JGE ge_label",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Signed >= comparison: for (i = 0; i >= 0; i--)",
+        "Implementing >= operator for signed integers"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JLE": {
+      "opcode": "JLE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Less or Equal (signed). ZF=1 OR SF!=OF.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JLE le_label",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Signed <= comparison: loop exit condition",
+        "Implementing <= operator for signed integers"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JAE": {
+      "opcode": "JAE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Above or Equal (unsigned). CF=0.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JAE ae_label",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Unsigned >= comparison: if (ptr >= start)",
+        "Range checks: CMP offset, size; JAE valid_offset"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JBE": {
+      "opcode": "JBE",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Below or Equal (unsigned). CF=1 OR ZF=1.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JBE be_label",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Unsigned <= comparison: buffer size checks",
+        "Implementing min() for unsigned values"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JS": {
+      "opcode": "JS",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Sign (SF=1). Result was negative.",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JS negative",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Checking for negative results: SUB eax, ebx; JS underflow",
+        "Error code handling: CMP eax, -1; JS is_error",
+        "Detecting negative values in calculations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JNS": {
+      "opcode": "JNS",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Not Sign (SF=0). Result was non-negative.",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JNS positive",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Checking for non-negative results",
+        "Success path after signed arithmetic"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JO": {
+      "opcode": "JO",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Overflow (OF=1). Signed overflow occurred.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JO overflow",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Detecting signed overflow after ADD/SUB",
+        "Safety checks in arithmetic: ADD eax, ebx; JO too_big",
+        "Validating arithmetic results won't overflow"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JNO": {
+      "opcode": "JNO",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if No Overflow (OF=0).",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JNO no_overflow",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Continuing when no overflow detected"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JC": {
+      "opcode": "JC",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Carry (CF=1).",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JC carry",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Checking for unsigned overflow/borrow",
+        "Multi-word arithmetic carry propagation"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JNC": {
+      "opcode": "JNC",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if No Carry (CF=0).",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "JNC no_carry",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Continuing when no carry/borrow"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "JP": {
+      "opcode": "JP",
+      "operands": [
+        "target"
+      ],
+      "description": "Jump if Parity (PF=1). Even number of set bits in low byte.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "JP even_parity",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "ASCII/BCD parity checking",
+        "Error detection in data transmission"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LOOP": {
+      "opcode": "LOOP",
+      "operands": [
+        "target"
+      ],
+      "description": "Decrement ECX and jump if ECX != 0. Combined DEC + JNZ.",
+      "category": "Control Flow",
+      "difficulty": 2,
+      "example": "LOOP loop_top",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Compact loop construct: MOV ecx, N; loop_top: ... LOOP loop_top",
+        "Fixed-count iteration loops",
+        "String processing with known length"
+      ],
+      "notes": "LOOP is slower than DEC ecx; JNZ on modern CPUs because it has a complex microcode implementation. Compilers prefer DEC/JNZ. However, LOOP is useful for its compact encoding.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LOOPE": {
+      "opcode": "LOOPE",
+      "operands": [
+        "target"
+      ],
+      "description": "Decrement ECX and jump if ECX != 0 AND ZF=1.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "LOOPE scan",
+      "cycles": 4,
+      "affects_flags": "None",
+      "use_cases": [
+        "Scanning for a matching byte in a string",
+        "Searching until a condition is met or count exhausted"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LOOPNE": {
+      "opcode": "LOOPNE",
+      "operands": [
+        "target"
+      ],
+      "description": "Decrement ECX and jump if ECX != 0 AND ZF=0.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "LOOPNE scan",
+      "cycles": 4,
+      "affects_flags": "None",
+      "use_cases": [
+        "Scanning until a non-matching byte is found",
+        "String comparison with early exit on mismatch"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CALL": {
+      "opcode": "CALL",
+      "operands": [
+        "target"
+      ],
+      "description": "Call subroutine. Pushes return address (next instruction) onto stack and jumps to target.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "CALL func",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Calling functions and subroutines",
+        "Implementing recursion (each CALL adds a stack frame)",
+        "Implementing virtual function dispatch",
+        "Calling API functions and library routines"
+      ],
+      "notes": "CALL is the fundamental instruction for function invocation. It pushes the return address (EIP of the next instruction) onto the stack and jumps to the target. RET pops the return address and jumps back. This push-jump / pop-jump pair is the basis of all procedural programming.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "RET": {
+      "opcode": "RET",
+      "operands": [],
+      "description": "Return from subroutine. Pops return address from stack and jumps to it.",
+      "category": "Control Flow",
+      "difficulty": 3,
+      "example": "RET",
+      "cycles": 3,
+      "affects_flags": "None",
+      "use_cases": [
+        "Returning from function calls",
+        "Returning from interrupt handlers (IRET for full context)"
+      ],
+      "notes": "RET n (with immediate) adds n to ESP after popping the return address, used in __cdecl to clean up pushed arguments from the caller's perspective.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "IRET": {
+      "opcode": "IRET",
+      "operands": [],
+      "description": "Interrupt Return. Pops EIP, CS, and EFLAGS from the stack.",
+      "category": "Control Flow",
+      "difficulty": 5,
+      "example": "IRET",
+      "cycles": 8,
+      "affects_flags": "All",
+      "use_cases": [
+        "Returning from hardware interrupt handlers",
+        "Restoring complete processor state after interrupt"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "INT": {
+      "opcode": "INT",
+      "operands": [
+        "number"
+      ],
+      "description": "Software Interrupt. Triggers an interrupt handler identified by the number.",
+      "category": "Control Flow",
+      "difficulty": 4,
+      "example": "INT 0x80",
+      "cycles": 30,
+      "affects_flags": "None",
+      "use_cases": [
+        "System calls: INT 0x80 on Linux (32-bit), INT 0x21 on DOS",
+        "Invoking BIOS services: INT 0x10 (video), INT 0x13 (disk)",
+        "Debugging breakpoints: INT 3",
+        "OS kernel entry points"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "INT3": {
+      "opcode": "INT3",
+      "operands": [],
+      "description": "Breakpoint interrupt (1 byte encoding). Used by debuggers.",
+      "category": "Control Flow",
+      "difficulty": 4,
+      "example": "INT3",
+      "cycles": 30,
+      "affects_flags": "None",
+      "use_cases": [
+        "Setting breakpoints in debuggers",
+        "Debug traps in production code"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CLC": {
+      "opcode": "CLC",
+      "operands": [],
+      "description": "Clear Carry Flag (CF=0).",
+      "category": "Flag Control",
+      "difficulty": 1,
+      "example": "CLC",
+      "cycles": 2,
+      "affects_flags": "CF=0",
+      "use_cases": [
+        "Clearing carry before ADC chains",
+        "Initializing flag state before arithmetic"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "STC": {
+      "opcode": "STC",
+      "operands": [],
+      "description": "Set Carry Flag (CF=1).",
+      "category": "Flag Control",
+      "difficulty": 1,
+      "example": "STC",
+      "cycles": 2,
+      "affects_flags": "CF=1",
+      "use_cases": [
+        "Setting carry before SBB chains",
+        "Simulating borrow in multi-word subtraction"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CMC": {
+      "opcode": "CMC",
+      "operands": [],
+      "description": "Complement Carry Flag (CF = NOT CF).",
+      "category": "Flag Control",
+      "difficulty": 2,
+      "example": "CMC",
+      "cycles": 2,
+      "affects_flags": "CF",
+      "use_cases": [
+        "Toggling carry flag"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CLD": {
+      "opcode": "CLD",
+      "operands": [],
+      "description": "Clear Direction Flag (DF=0). String operations auto-increment ESI/EDI.",
+      "category": "Flag Control",
+      "difficulty": 2,
+      "example": "CLD",
+      "cycles": 2,
+      "affects_flags": "DF=0",
+      "use_cases": [
+        "ALWAYS call CLD before REP MOVS/STOS to ensure forward direction",
+        "Standard setup for string operations"
+      ],
+      "notes": "Always CLD before using string instructions. If DF is set (from a previous STD), string operations will go backwards, causing subtle bugs.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "STD": {
+      "opcode": "STD",
+      "operands": [],
+      "description": "Set Direction Flag (DF=1). String operations auto-decrement ESI/EDI.",
+      "category": "Flag Control",
+      "difficulty": 2,
+      "example": "STD",
+      "cycles": 2,
+      "affects_flags": "DF=1",
+      "use_cases": [
+        "Copying strings in reverse (right to left) for memmove",
+        "Processing arrays from end to beginning"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CLI": {
+      "opcode": "CLI",
+      "operands": [],
+      "description": "Clear Interrupt Flag (IF=0). Disables maskable hardware interrupts.",
+      "category": "Flag Control",
+      "difficulty": 4,
+      "example": "CLI",
+      "cycles": 1,
+      "affects_flags": "IF=0",
+      "use_cases": [
+        "Disabling interrupts in OS kernel during critical sections",
+        "Protecting interrupt-sensitive code sequences"
+      ],
+      "notes": "CLI is a privileged instruction in protected mode. Only kernel code can execute it. Disabling interrupts for too long can cause missed interrupts and system instability.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "STI": {
+      "opcode": "STI",
+      "operands": [],
+      "description": "Set Interrupt Flag (IF=1). Enables maskable hardware interrupts.",
+      "category": "Flag Control",
+      "difficulty": 4,
+      "example": "STI",
+      "cycles": 1,
+      "affects_flags": "IF=1",
+      "use_cases": [
+        "Re-enabling interrupts after critical section in kernel",
+        "Initial interrupt setup in boot code"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LAHF": {
+      "opcode": "LAHF",
+      "operands": [],
+      "description": "Load AH from EFLAGS (SF:ZF:0:AF:0:PF:1:CF).",
+      "category": "Flag Control",
+      "difficulty": 3,
+      "example": "LAHF",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Saving flag state in AH register",
+        "Flag manipulation via register operations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "SAHF": {
+      "opcode": "SAHF",
+      "operands": [],
+      "description": "Store AH into EFLAGS (SF:ZF:0:AF:0:PF:1:CF).",
+      "category": "Flag Control",
+      "difficulty": 3,
+      "example": "SAHF",
+      "cycles": 1,
+      "affects_flags": "SF ZF AF PF CF",
+      "use_cases": [
+        "Restoring flag state from AH register",
+        "Setting flags via register operations"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "IN": {
+      "opcode": "IN",
+      "operands": [
+        "dest",
+        "port"
+      ],
+      "description": "Read a byte/word/dword from an I/O port into AL/AX/EAX.",
+      "category": "I/O",
+      "difficulty": 4,
+      "example": "IN al, 0x60",
+      "cycles": 8,
+      "affects_flags": "None",
+      "use_cases": [
+        "Reading from hardware ports (keyboard controller at 0x60)",
+        "Reading VGA display registers",
+        "Reading from serial ports (COM1 at 0x3F8)",
+        "Reading PCI configuration space"
+      ],
+      "notes": "IN is a privileged instruction in protected mode. Direct port I/O is only available to kernel-mode code. User-mode programs must use OS-provided APIs for I/O.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "OUT": {
+      "opcode": "OUT",
+      "operands": [
+        "port",
+        "src"
+      ],
+      "description": "Write AL/AX/EAX to an I/O port.",
+      "category": "I/O",
+      "difficulty": 4,
+      "example": "OUT 0x60, al",
+      "cycles": 8,
+      "affects_flags": "None",
+      "use_cases": [
+        "Sending commands to hardware (keyboard, PIC, PIT)",
+        "Writing to VGA registers for display control",
+        "Writing to serial ports for communication",
+        "Programming hardware devices in OS kernels"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "NOP": {
+      "opcode": "NOP",
+      "operands": [],
+      "description": "No Operation. Does nothing, advances EIP by 1 byte (0x90).",
+      "category": "Processor Control",
+      "difficulty": 1,
+      "example": "NOP",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Padding for alignment (aligning loops to 16-byte boundaries)",
+        "Debugging placeholder and code patching space",
+        "Delay loops (though volatile NOP timing varies)",
+        "SLED (Self-Loading Executable) in exploit shellcode"
+      ],
+      "notes": "NOP is encoded as 0x90 (XCHG eax, eax - a one-byte no-op). Multi-byte NOPs (NOP 2-9 bytes) are used for alignment padding. NOP sleds are used in buffer overflow exploits.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "HLT": {
+      "opcode": "HLT",
+      "operands": [],
+      "description": "Halt the processor. Stops instruction execution until an interrupt occurs.",
+      "category": "Processor Control",
+      "difficulty": 4,
+      "example": "HLT",
+      "cycles": 50,
+      "affects_flags": "None",
+      "use_cases": [
+        "Halting the CPU when idle (saves power)",
+        "End of idle loop in OS scheduler",
+        "Waiting for the next interrupt"
+      ],
+      "notes": "HLT is a privileged instruction. The CPU enters a low-power state and waits for an interrupt. Used in the idle loop of OS schedulers: idle: HLT; JMP idle.",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "LOCK": {
+      "opcode": "LOCK",
+      "operands": [],
+      "description": "Lock prefix. Asserts LOCK# signal, making the next instruction atomic.",
+      "category": "Processor Control",
+      "difficulty": 5,
+      "example": "LOCK XADD [mem], eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Atomic memory operations for multi-threaded synchronization",
+        "Implementing spinlocks: LOCK BTS [lock_var], 0; JC spin",
+        "Atomic compare-and-swap: LOCK CMPXCHG",
+        "Implementing mutexes, semaphores, and reference counts"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "CPUID": {
+      "opcode": "CPUID",
+      "operands": [],
+      "description": "CPU Identification. Returns processor feature information in EAX, EBX, ECX, EDX.",
+      "category": "Processor Control",
+      "difficulty": 3,
+      "example": "CPUID",
+      "cycles": 15,
+      "affects_flags": "None",
+      "use_cases": [
+        "Detecting CPU vendor (Intel/AMD)",
+        "Querying processor features (SSE, AVX, etc.)",
+        "Detecting cache sizes and topology",
+        "Runtime CPU feature detection for optimized code paths"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "RDTSC": {
+      "opcode": "RDTSC",
+      "operands": [],
+      "description": "Read Time-Stamp Counter. Loads 64-bit cycle count into EDX:EAX.",
+      "category": "Processor Control",
+      "difficulty": 3,
+      "example": "RDTSC",
+      "cycles": 10,
+      "affects_flags": "None",
+      "use_cases": [
+        "High-resolution performance timing and benchmarking",
+        "Measuring instruction execution time",
+        "Random number generation seed",
+        "Profiling and performance analysis"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    },
+    "MOVSXD": {
+      "opcode": "MOVSXD",
+      "operands": [
+        "dest",
+        "src"
+      ],
+      "description": "Move with sign-extension from 32-bit to 64-bit (x86-64 only).",
+      "category": "Data Transfer",
+      "difficulty": 3,
+      "example": "MOVSXD rax, eax",
+      "cycles": 1,
+      "affects_flags": "None",
+      "use_cases": [
+        "Sign-extending 32-bit values to 64-bit in x86-64 mode"
+      ],
+      "notes": "",
+      "syntax_variants": [],
+      "see_also": [],
+      "architecture": "x86"
+    }
+  },
+  "arm": {
+    "MOV": {
+      "opcode": "MOV",
+      "description": "Move value to register. Can move between registers or load immediates.",
+      "category": "Data Transfer",
+      "syntax": "MOV Rd, Rm / MOV Rd, #imm",
+      "example": "MOV X0, #42",
+      "use_cases": [
+        "Initializing registers with constants",
+        "Copying values between registers",
+        "Setting up function arguments"
+      ],
+      "notes": "ARM MOV can encode any 16-bit immediate with optional rotation, unlike x86 MOV which can encode 32-bit immediates.",
+      "architecture": "ARM"
+    },
+    "MOVZ": {
+      "opcode": "MOVZ",
+      "description": "Move with zero. Loads a 16-bit immediate into a register, zeroing the upper bits.",
+      "category": "Data Transfer",
+      "syntax": "MOVZ Rd, #imm, LSL #shift",
+      "example": "MOVZ X0, #0x1234, LSL #16",
+      "use_cases": [
+        "Loading large immediate values",
+        "Building 32/64-bit constants piece by piece"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "MOVK": {
+      "opcode": "MOVK",
+      "description": "Move with keep. Inserts a 16-bit immediate into a register, keeping other bits.",
+      "category": "Data Transfer",
+      "syntax": "MOVK Rd, #imm, LSL #shift",
+      "example": "MOVK X0, #0x5678, LSL #16",
+      "use_cases": [
+        "Building large constants: MOVZ + MOVK sequence",
+        "Setting specific 16-bit fields of a register"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "ADD": {
+      "opcode": "ADD",
+      "description": "Add two registers or register and immediate.",
+      "category": "Arithmetic",
+      "syntax": "ADD Rd, Rn, Rm / ADD Rd, Rn, #imm",
+      "example": "ADD X0, X1, X2",
+      "use_cases": [
+        "Arithmetic addition",
+        "Address calculation",
+        "Counter incrementing"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "SUB": {
+      "opcode": "SUB",
+      "description": "Subtract. Rd = Rn - Rm (or -imm).",
+      "category": "Arithmetic",
+      "syntax": "SUB Rd, Rn, Rm",
+      "example": "SUB X0, X1, #10",
+      "use_cases": [
+        "Arithmetic subtraction",
+        "Stack pointer adjustment",
+        "Offset calculation"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "MUL": {
+      "opcode": "MUL",
+      "description": "Multiply: Rd = Rn * Rm (lower 64 bits).",
+      "category": "Arithmetic",
+      "syntax": "MUL Rd, Rn, Rm",
+      "example": "MUL X0, X1, X2",
+      "use_cases": [
+        "Integer multiplication",
+        "Hash computation",
+        "Scaling factors"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "UDIV": {
+      "opcode": "UDIV",
+      "description": "Unsigned divide: Rd = Rn / Rm.",
+      "category": "Arithmetic",
+      "syntax": "UDIV Rd, Rn, Rm",
+      "example": "UDIV X0, X1, X2",
+      "use_cases": [
+        "Unsigned integer division",
+        "Computing array indices"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "SDIV": {
+      "opcode": "SDIV",
+      "description": "Signed divide: Rd = Rn / Rm.",
+      "category": "Arithmetic",
+      "syntax": "SDIV Rd, Rn, Rm",
+      "example": "SDIV X0, X1, X2",
+      "use_cases": [
+        "Signed integer division",
+        "Financial calculations"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "AND": {
+      "opcode": "AND",
+      "description": "Bitwise AND.",
+      "category": "Logical",
+      "syntax": "AND Rd, Rn, Rm",
+      "example": "AND X0, X0, #0xFF",
+      "use_cases": [
+        "Bit masking",
+        "Extracting bit fields",
+        "Checking flags"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "ORR": {
+      "opcode": "ORR",
+      "description": "Bitwise OR.",
+      "category": "Logical",
+      "syntax": "ORR Rd, Rn, Rm",
+      "example": "ORR X0, X0, #1",
+      "use_cases": [
+        "Setting bits",
+        "Combining flags"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "EOR": {
+      "opcode": "EOR",
+      "description": "Bitwise XOR (Exclusive OR).",
+      "category": "Logical",
+      "syntax": "EOR Rd, Rn, Rm",
+      "example": "EOR X0, X0, X0  ; zero register",
+      "use_cases": [
+        "Toggling bits",
+        "Zeroing registers",
+        "Simple encryption"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "LSL": {
+      "opcode": "LSL",
+      "description": "Logical Shift Left. Equivalent to unsigned multiply by 2^n.",
+      "category": "Shift/Rotate",
+      "syntax": "LSL Rd, Rn, #shift",
+      "example": "LSL X0, X0, #3  ; multiply by 8",
+      "use_cases": [
+        "Fast multiplication by powers of 2",
+        "Bit alignment",
+        "Building constants"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "LSR": {
+      "opcode": "LSR",
+      "description": "Logical Shift Right. Fills with zeros.",
+      "category": "Shift/Rotate",
+      "syntax": "LSR Rd, Rn, #shift",
+      "example": "LSR X0, X0, #2  ; divide by 4",
+      "use_cases": [
+        "Fast unsigned division by powers of 2",
+        "Extracting bit fields"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "ASR": {
+      "opcode": "ASR",
+      "description": "Arithmetic Shift Right. Preserves sign bit.",
+      "category": "Shift/Rotate",
+      "syntax": "ASR Rd, Rn, #shift",
+      "example": "ASR X0, X0, #1  ; signed /2",
+      "use_cases": [
+        "Signed division by powers of 2",
+        "Preserving sign in shifts"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "CMP": {
+      "opcode": "CMP",
+      "description": "Compare: sets flags based on Rn - Rm without storing.",
+      "category": "Comparison",
+      "syntax": "CMP Rn, Rm / CMP Rn, #imm",
+      "example": "CMP X0, #10",
+      "use_cases": [
+        "Conditional branching setup",
+        "Loop termination",
+        "Range checking"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "CSEL": {
+      "opcode": "CSEL",
+      "description": "Conditional Select: Rd = cond ? Rn : Rm.",
+      "category": "Data Transfer",
+      "syntax": "CSEL Rd, Rn, Rm, cond",
+      "example": "CSEL X0, X1, X2, GE  ; max(x1,x2)",
+      "use_cases": [
+        "Branchless conditional move",
+        "Implementing ternary operator",
+        "Min/max without branches"
+      ],
+      "notes": "CSEL is ARM's equivalent of x86 CMOVcc. It selects between two registers based on condition flags, avoiding branch misprediction.",
+      "architecture": "ARM"
+    },
+    "LDR": {
+      "opcode": "LDR",
+      "description": "Load Register: loads a word/dword from memory into a register.",
+      "category": "Load/Store",
+      "syntax": "LDR Rd, [Rn, #offset] / LDR Rd, [Rn, Rm, LSL #scale]",
+      "example": "LDR X0, [SP, #16]",
+      "use_cases": [
+        "Loading variables from memory",
+        "Reading array elements",
+        "Accessing struct fields",
+        "Loading function arguments from stack"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "STR": {
+      "opcode": "STR",
+      "description": "Store Register: stores a register value to memory.",
+      "category": "Load/Store",
+      "syntax": "STR Rd, [Rn, #offset]",
+      "example": "STR X0, [SP, #-16]!",
+      "use_cases": [
+        "Storing variables to memory",
+        "Writing array elements",
+        "Saving to stack"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "LDP": {
+      "opcode": "LDP",
+      "description": "Load Pair: loads two registers from consecutive memory locations.",
+      "category": "Load/Store",
+      "syntax": "LDP Rt, Rt2, [Rn, #offset]",
+      "example": "LDP X29, X30, [SP], #16",
+      "use_cases": [
+        "Function prologue/epilogue (saving/restoring frame pointer and link register)",
+        "Loading multiple values efficiently"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "STP": {
+      "opcode": "STP",
+      "description": "Store Pair: stores two registers to consecutive memory locations.",
+      "category": "Load/Store",
+      "syntax": "STP Rt, Rt2, [Rn, #offset]",
+      "example": "STP X29, X30, [SP, #-16]!",
+      "use_cases": [
+        "Function prologue: saving callee-saved registers",
+        "Storing register pairs to stack"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "LDUR": {
+      "opcode": "LDUR",
+      "description": "Load Register (unscaled): load with signed byte offset.",
+      "category": "Load/Store",
+      "syntax": "LDUR Rd, [Rn, #offset]",
+      "example": "LDUR W0, [X1, #-1]",
+      "use_cases": [
+        "Accessing unaligned memory locations"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "B": {
+      "opcode": "B",
+      "description": "Unconditional branch.",
+      "category": "Control Flow",
+      "syntax": "B label",
+      "example": "B loop_start",
+      "use_cases": [
+        "Infinite loops",
+        "Goto statements",
+        "Tail calls"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "BL": {
+      "opcode": "BL",
+      "description": "Branch with Link: saves return address in X30 (LR) and branches.",
+      "category": "Control Flow",
+      "syntax": "BL label",
+      "example": "BL printf",
+      "use_cases": [
+        "Function calls: BL saves return address in LR",
+        "Implementing subroutines and recursive calls"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "BR": {
+      "opcode": "BR",
+      "description": "Branch to Register: jumps to address in register.",
+      "category": "Control Flow",
+      "syntax": "BR Xn",
+      "example": "BR X30  ; indirect return",
+      "use_cases": [
+        "Indirect jumps",
+        "Return from function (BR X30)",
+        "Virtual function dispatch",
+        "Jump tables"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "BLR": {
+      "opcode": "BLR",
+      "description": "Branch with Link to Register: saves return address and jumps to register.",
+      "category": "Control Flow",
+      "syntax": "BLR Xn",
+      "example": "BLR X8",
+      "use_cases": [
+        "Indirect function calls through function pointers",
+        "Calling virtual functions",
+        "Calling callback functions"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "CBZ": {
+      "opcode": "CBZ",
+      "description": "Compare and Branch if Zero.",
+      "category": "Control Flow",
+      "syntax": "CBZ Rn, label",
+      "example": "CBZ X0, is_zero",
+      "use_cases": [
+        "Null pointer checks",
+        "Zero value branching without separate CMP"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "CBNZ": {
+      "opcode": "CBNZ",
+      "description": "Compare and Branch if Not Zero.",
+      "category": "Control Flow",
+      "syntax": "CBNZ Rn, label",
+      "example": "CBNZ X0, not_zero",
+      "use_cases": [
+        "Non-null pointer checks",
+        "Non-zero branching"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "B.cond": {
+      "opcode": "B.cond",
+      "description": "Conditional branch based on condition flags.",
+      "category": "Control Flow",
+      "syntax": "B.cond label",
+      "example": "B.EQ equal_case / B.NE not_equal",
+      "use_cases": [
+        "if/else branching",
+        "Loop conditions",
+        "Error handling"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "RET": {
+      "opcode": "RET",
+      "description": "Return: branches to address in X30 (link register).",
+      "category": "Control Flow",
+      "syntax": "RET",
+      "example": "RET",
+      "use_cases": [
+        "Returning from functions called with BL"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "SVC": {
+      "opcode": "SVC",
+      "description": "Supervisor Call (formerly SWI). Triggers a system call.",
+      "category": "System",
+      "syntax": "SVC #imm",
+      "example": "SVC #0",
+      "use_cases": [
+        "Making system calls (Linux: SVC #0)",
+        "Requesting OS services"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "MRS": {
+      "opcode": "MRS",
+      "description": "Move to Register from System register.",
+      "category": "System",
+      "syntax": "MRS Rd, sysreg",
+      "example": "MRS X0, NZCV",
+      "use_cases": [
+        "Reading processor state registers"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "MSR": {
+      "opcode": "MSR",
+      "description": "Move from Register to System register.",
+      "category": "System",
+      "syntax": "MSR sysreg, Rt",
+      "example": "MSR DAIFSet, #0x2",
+      "use_cases": [
+        "Setting processor state registers"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "NOP": {
+      "opcode": "NOP",
+      "description": "No Operation.",
+      "category": "Misc",
+      "syntax": "NOP",
+      "example": "NOP",
+      "use_cases": [
+        "Alignment padding",
+        "Debugging placeholders"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "DMB": {
+      "opcode": "DMB",
+      "description": "Data Memory Barrier.",
+      "category": "Memory Ordering",
+      "syntax": "DMB",
+      "example": "DMB ISH",
+      "use_cases": [
+        "Memory ordering in multi-core systems",
+        "Ensuring memory access ordering"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "DSB": {
+      "opcode": "DSB",
+      "description": "Data Synchronization Barrier.",
+      "category": "Memory Ordering",
+      "syntax": "DSB",
+      "example": "DSB ISH",
+      "use_cases": [
+        "Ensuring all memory accesses complete before proceeding"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    },
+    "ISB": {
+      "opcode": "ISB",
+      "description": "Instruction Synchronization Barrier.",
+      "category": "Memory Ordering",
+      "syntax": "ISB",
+      "example": "ISB",
+      "use_cases": [
+        "Flushing the instruction pipeline after self-modifying code"
+      ],
+      "notes": "",
+      "architecture": "ARM"
+    }
+  },
+  "riscv": {
+    "ADDI": {
+      "opcode": "ADDI",
+      "description": "Add Immediate: rd = rs1 + imm.",
+      "category": "Arithmetic",
+      "syntax": "ADDI rd, rs1, imm",
+      "example": "ADDI x5, x0, 42",
+      "use_cases": [
+        "Loading constants (RISC-V has no MOV, use ADDI rd, x0, imm)",
+        "Adjusting stack pointer: ADDI sp, sp, -16",
+        "Counter initialization"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "ADD": {
+      "opcode": "ADD",
+      "description": "Add: rd = rs1 + rs2.",
+      "category": "Arithmetic",
+      "syntax": "ADD rd, rs1, rs2",
+      "example": "ADD x3, x1, x2",
+      "use_cases": [
+        "Integer addition",
+        "Accumulation"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SUB": {
+      "opcode": "SUB",
+      "description": "Subtract: rd = rs1 - rs2.",
+      "category": "Arithmetic",
+      "syntax": "SUB rd, rs1, rs2",
+      "example": "SUB x3, x1, x2",
+      "use_cases": [
+        "Integer subtraction"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SLT": {
+      "opcode": "SLT",
+      "description": "Set Less Than (signed): rd = (rs1 < rs2) ? 1 : 0.",
+      "category": "Comparison",
+      "syntax": "SLT rd, rs1, rs2",
+      "example": "SLT x5, x1, x2",
+      "use_cases": [
+        "Signed comparison",
+        "Implementing min/max"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SLTI": {
+      "opcode": "SLTI",
+      "description": "Set Less Than Immediate (signed).",
+      "category": "Comparison",
+      "syntax": "SLTI rd, rs1, imm",
+      "example": "SLTI x5, x1, 10",
+      "use_cases": [
+        "Comparing with constants"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SLTU": {
+      "opcode": "SLTU",
+      "description": "Set Less Than Unsigned: rd = (rs1 < rs2) ? 1 : 0.",
+      "category": "Comparison",
+      "syntax": "SLTU rd, rs1, rs2",
+      "example": "SLTU x5, x1, x2",
+      "use_cases": [
+        "Unsigned comparison",
+        "Pointer comparison"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "XOR": {
+      "opcode": "XOR",
+      "description": "Bitwise XOR: rd = rs1 ^ rs2.",
+      "category": "Logical",
+      "syntax": "XOR rd, rs1, rs2",
+      "example": "XOR x5, x5, x5  ; zero register",
+      "use_cases": [
+        "Zeroing registers",
+        "Bit toggling"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "XORI": {
+      "opcode": "XORI",
+      "description": "Bitwise XOR Immediate: rd = rs1 ^ imm.",
+      "category": "Logical",
+      "syntax": "XORI rd, rs1, imm",
+      "example": "XORI x5, x5, -1  ; NOT",
+      "use_cases": [
+        "Computing bitwise NOT: XORI rd, rs1, -1"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "OR": {
+      "opcode": "OR",
+      "description": "Bitwise OR: rd = rs1 | rs2.",
+      "category": "Logical",
+      "syntax": "OR rd, rs1, rs2",
+      "example": "OR x5, x1, x2",
+      "use_cases": [
+        "Setting bits",
+        "Combining flags"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "ORI": {
+      "opcode": "ORI",
+      "description": "Bitwise OR Immediate: rd = rs1 | imm.",
+      "category": "Logical",
+      "syntax": "ORI rd, rs1, imm",
+      "example": "ORI x5, x0, 1  ; x5 = 1",
+      "use_cases": [
+        "Loading small constants",
+        "Setting bits"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "AND": {
+      "opcode": "AND",
+      "description": "Bitwise AND: rd = rs1 & rs2.",
+      "category": "Logical",
+      "syntax": "AND rd, rs1, rs2",
+      "example": "AND x5, x1, x2",
+      "use_cases": [
+        "Bit masking",
+        "Extracting bits"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "ANDI": {
+      "opcode": "ANDI",
+      "description": "Bitwise AND Immediate: rd = rs1 & imm.",
+      "category": "Logical",
+      "syntax": "ANDI rd, rs1, imm",
+      "example": "ANDI x5, x1, 0xFF",
+      "use_cases": [
+        "Masking lower bits"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SLL": {
+      "opcode": "SLL",
+      "description": "Shift Left Logical: rd = rs1 << rs2.",
+      "category": "Shift",
+      "syntax": "SLL rd, rs1, rs2",
+      "example": "SLL x5, x1, x3",
+      "use_cases": [
+        "Fast multiplication by powers of 2"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SRL": {
+      "opcode": "SRL",
+      "description": "Shift Right Logical: rd = rs1 >> rs2 (unsigned).",
+      "category": "Shift",
+      "syntax": "SRL rd, rs1, rs2",
+      "example": "SRL x5, x1, x3",
+      "use_cases": [
+        "Fast unsigned division by powers of 2"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SRA": {
+      "opcode": "SRA",
+      "description": "Shift Right Arithmetic: rd = rs1 >>> rs2 (signed).",
+      "category": "Shift",
+      "syntax": "SRA rd, rs1, rs2",
+      "example": "SRA x5, x1, x3",
+      "use_cases": [
+        "Fast signed division by powers of 2"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LUI": {
+      "opcode": "LUI",
+      "description": "Load Upper Immediate: rd = imm << 12. Loads upper 20 bits.",
+      "category": "Data Transfer",
+      "syntax": "LUI rd, imm",
+      "example": "LUI x5, 1  ; x5 = 0x1000",
+      "use_cases": [
+        "Loading large constants (upper 20 bits)",
+        "Building 32-bit constants with ADDI for lower 12 bits"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "AUIPC": {
+      "opcode": "AUIPC",
+      "description": "Add Upper Immediate to PC: rd = PC + (imm << 12).",
+      "category": "Data Transfer",
+      "syntax": "AUIPC rd, imm",
+      "example": "AUIPC x5, 1",
+      "use_cases": [
+        "Position-independent code (PIC)",
+        "Computing addresses relative to PC"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LW": {
+      "opcode": "LW",
+      "description": "Load Word: rd = mem[rs1 + offset].",
+      "category": "Load/Store",
+      "syntax": "LW rd, offset(rs1)",
+      "example": "LW x5, 0(x1)",
+      "use_cases": [
+        "Loading 32-bit values from memory",
+        "Reading variables",
+        "Loading array elements"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SW": {
+      "opcode": "SW",
+      "description": "Store Word: mem[rs1 + offset] = rs2.",
+      "category": "Load/Store",
+      "syntax": "SW rs2, offset(rs1)",
+      "example": "SW x5, 0(x1)",
+      "use_cases": [
+        "Storing 32-bit values to memory",
+        "Writing variables",
+        "Storing array elements"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LB": {
+      "opcode": "LB",
+      "description": "Load Byte (signed extend).",
+      "category": "Load/Store",
+      "syntax": "LB rd, offset(rs1)",
+      "example": "LB x5, 0(x1)",
+      "use_cases": [
+        "Loading signed bytes",
+        "Reading char values"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LBU": {
+      "opcode": "LBU",
+      "description": "Load Byte Unsigned.",
+      "category": "Load/Store",
+      "syntax": "LBU rd, offset(rs1)",
+      "example": "LBU x5, 0(x1)",
+      "use_cases": [
+        "Loading unsigned bytes",
+        "Reading ASCII characters"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LH": {
+      "opcode": "LH",
+      "description": "Load Halfword (signed extend).",
+      "category": "Load/Store",
+      "syntax": "LH rd, offset(rs1)",
+      "example": "LH x5, 0(x1)",
+      "use_cases": [
+        "Loading signed 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "LHU": {
+      "opcode": "LHU",
+      "description": "Load Halfword Unsigned.",
+      "category": "Load/Store",
+      "syntax": "LHU rd, offset(rs1)",
+      "example": "LHU x5, 0(x1)",
+      "use_cases": [
+        "Loading unsigned 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SB": {
+      "opcode": "SB",
+      "description": "Store Byte.",
+      "category": "Load/Store",
+      "syntax": "SB rs2, offset(rs1)",
+      "example": "SB x5, 0(x1)",
+      "use_cases": [
+        "Storing single bytes",
+        "Writing character data"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "SH": {
+      "opcode": "SH",
+      "description": "Store Halfword.",
+      "category": "Load/Store",
+      "syntax": "SH rs2, offset(rs1)",
+      "example": "SH x5, 0(x1)",
+      "use_cases": [
+        "Storing 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BEQ": {
+      "opcode": "BEQ",
+      "description": "Branch if Equal: if (rs1 == rs2) pc += offset.",
+      "category": "Control Flow",
+      "syntax": "BEQ rs1, rs2, offset",
+      "example": "BEQ x5, x0, done",
+      "use_cases": [
+        "Equality comparison branching",
+        "Checking for zero: BEQ rs, x0, label"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BNE": {
+      "opcode": "BNE",
+      "description": "Branch if Not Equal.",
+      "category": "Control Flow",
+      "syntax": "BNE rs1, rs2, offset",
+      "example": "BNE x5, x0, loop",
+      "use_cases": [
+        "Inequality check",
+        "Loop continuation"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BLT": {
+      "opcode": "BLT",
+      "description": "Branch if Less Than (signed).",
+      "category": "Control Flow",
+      "syntax": "BLT rs1, rs2, offset",
+      "example": "BLT x1, x2, less",
+      "use_cases": [
+        "Signed less-than branching"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BGE": {
+      "opcode": "BGE",
+      "description": "Branch if Greater or Equal (signed).",
+      "category": "Control Flow",
+      "syntax": "BGE rs1, rs2, offset",
+      "example": "BGE x1, x2, ge",
+      "use_cases": [
+        "Signed greater-or-equal branching"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BLTU": {
+      "opcode": "BLTU",
+      "description": "Branch if Less Than Unsigned.",
+      "category": "Control Flow",
+      "syntax": "BLTU rs1, rs2, offset",
+      "example": "BLTU x5, x6, below",
+      "use_cases": [
+        "Unsigned less-than",
+        "Buffer bounds checking"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "BGEU": {
+      "opcode": "BGEU",
+      "description": "Branch if Greater or Equal Unsigned.",
+      "category": "Control Flow",
+      "syntax": "BGEU rs1, rs2, offset",
+      "example": "BGEU x5, x6, above",
+      "use_cases": [
+        "Unsigned greater-or-equal"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "JAL": {
+      "opcode": "JAL",
+      "description": "Jump and Link: rd = PC+4; PC += offset.",
+      "category": "Control Flow",
+      "syntax": "JAL rd, offset",
+      "example": "JAL ra, func_name",
+      "use_cases": [
+        "Function calls: saves return address in rd (usually ra=x1)",
+        "Relative function calls"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "JALR": {
+      "opcode": "JALR",
+      "description": "Jump and Link Register: rd = PC+4; PC = rs1 + offset.",
+      "category": "Control Flow",
+      "syntax": "JALR rd, offset(rs1)",
+      "example": "JALR x0, 0(x1)  ; return",
+      "use_cases": [
+        "Indirect function calls",
+        "Return from function: JALR x0, 0(ra)",
+        "Function pointers"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "ECALL": {
+      "opcode": "ECALL",
+      "description": "Environment Call: system call.",
+      "category": "System",
+      "syntax": "ECALL",
+      "example": "ECALL",
+      "use_cases": [
+        "Making system calls (Linux, bare metal)",
+        "Requesting OS services"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "EBREAK": {
+      "opcode": "EBREAK",
+      "description": "Environment Break: debugger breakpoint.",
+      "category": "System",
+      "syntax": "EBREAK",
+      "example": "EBREAK",
+      "use_cases": [
+        "Debugging breakpoints"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "FENCE": {
+      "opcode": "FENCE",
+      "description": "Memory fence: orders memory operations.",
+      "category": "Memory Ordering",
+      "syntax": "FENCE",
+      "example": "FENCE",
+      "use_cases": [
+        "Memory ordering in multi-core systems"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "NOP": {
+      "opcode": "NOP",
+      "description": "No Operation (encoded as ADDI x0, x0, 0).",
+      "category": "Misc",
+      "syntax": "NOP",
+      "example": "ADDI x0, x0, 0",
+      "use_cases": [
+        "Alignment padding"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "MUL": {
+      "opcode": "MUL",
+      "description": "Multiply: rd = rs1 * rs2 (lower bits).",
+      "category": "Arithmetic (M)",
+      "syntax": "MUL rd, rs1, rs2",
+      "example": "MUL x5, x1, x2",
+      "use_cases": [
+        "Integer multiplication"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "MULH": {
+      "opcode": "MULH",
+      "description": "Multiply High (signed x signed).",
+      "category": "Arithmetic (M)",
+      "syntax": "MULH rd, rs1, rs2",
+      "example": "MULH x5, x1, x2",
+      "use_cases": [
+        "Getting upper 32 bits of signed multiplication"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "DIV": {
+      "opcode": "DIV",
+      "description": "Divide (signed): rd = rs1 / rs2.",
+      "category": "Arithmetic (M)",
+      "syntax": "DIV rd, rs1, rs2",
+      "example": "DIV x5, x1, x2",
+      "use_cases": [
+        "Signed integer division"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "DIVU": {
+      "opcode": "DIVU",
+      "description": "Divide Unsigned: rd = rs1 / rs2.",
+      "category": "Arithmetic (M)",
+      "syntax": "DIVU rd, rs1, rs2",
+      "example": "DIVU x5, x1, x2",
+      "use_cases": [
+        "Unsigned integer division"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "REM": {
+      "opcode": "REM",
+      "description": "Remainder (signed): rd = rs1 % rs2.",
+      "category": "Arithmetic (M)",
+      "syntax": "REM rd, rs1, rs2",
+      "example": "REM x5, x1, x2",
+      "use_cases": [
+        "Signed modulo"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    },
+    "REMU": {
+      "opcode": "REMU",
+      "description": "Remainder Unsigned: rd = rs1 % rs2.",
+      "category": "Arithmetic (M)",
+      "syntax": "REMU rd, rs1, rs2",
+      "example": "REMU x5, x1, x2",
+      "use_cases": [
+        "Unsigned modulo"
+      ],
+      "notes": "",
+      "architecture": "RISC-V"
+    }
+  },
+  "mips": {
+    "ADD": {
+      "opcode": "ADD",
+      "description": "Add: rd = rs + rt. Signed overflow trap.",
+      "category": "Arithmetic",
+      "syntax": "ADD rd, rs, rt",
+      "example": "ADD $t0, $t1, $t2",
+      "use_cases": [
+        "Signed addition with overflow detection"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "ADDU": {
+      "opcode": "ADDU",
+      "description": "Add Unsigned: rd = rs + rt. No overflow trap.",
+      "category": "Arithmetic",
+      "syntax": "ADDU rd, rs, rt",
+      "example": "ADDU $t0, $t1, $t2",
+      "use_cases": [
+        "Most common addition - no overflow exception",
+        "Address calculation",
+        "Counter incrementing"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "ADDI": {
+      "opcode": "ADDI",
+      "description": "Add Immediate: rt = rs + imm. Signed overflow trap.",
+      "category": "Arithmetic",
+      "syntax": "ADDI rt, rs, imm",
+      "example": "ADDI $t0, $t1, 100",
+      "use_cases": [
+        "Adding constants to registers"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "ADDIU": {
+      "opcode": "ADDIU",
+      "description": "Add Immediate Unsigned: rt = rs + imm. No overflow trap.",
+      "category": "Arithmetic",
+      "syntax": "ADDIU rt, rs, imm",
+      "example": "ADDIU $sp, $sp, -8",
+      "use_cases": [
+        "Stack pointer adjustment (most common use)",
+        "Adding constants without overflow trap"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SUB": {
+      "opcode": "SUB",
+      "description": "Subtract: rd = rs - rt.",
+      "category": "Arithmetic",
+      "syntax": "SUB rd, rs, rt",
+      "example": "SUB $t0, $t1, $t2",
+      "use_cases": [
+        "Signed subtraction"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SUBU": {
+      "opcode": "SUBU",
+      "description": "Subtract Unsigned: rd = rs - rt. No overflow trap.",
+      "category": "Arithmetic",
+      "syntax": "SUBU rd, rs, rt",
+      "example": "SUBU $t0, $t1, $t2",
+      "use_cases": [
+        "Common subtraction without overflow checking"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "MULT": {
+      "opcode": "MULT",
+      "description": "Multiply: HI:LO = rs * rt (signed).",
+      "category": "Arithmetic",
+      "syntax": "MULT rs, rt",
+      "example": "MULT $t1, $t2",
+      "use_cases": [
+        "Signed multiplication, result in HI:LO"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "DIV": {
+      "opcode": "DIV",
+      "description": "Divide: LO = rs / rt, HI = rs % rt (signed).",
+      "category": "Arithmetic",
+      "syntax": "DIV rs, rt",
+      "example": "DIV $t1, $t2",
+      "use_cases": [
+        "Signed division with remainder",
+        "MFLO gets quotient, MFHI gets remainder"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "MFLO": {
+      "opcode": "MFLO",
+      "description": "Move From LO: rd = LO.",
+      "category": "Data Transfer",
+      "syntax": "MFLO rd",
+      "example": "MFLO $t0",
+      "use_cases": [
+        "Getting quotient after DIV",
+        "Getting lower 32 bits after MULT"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "MFHI": {
+      "opcode": "MFHI",
+      "description": "Move From HI: rd = HI.",
+      "category": "Data Transfer",
+      "syntax": "MFHI rd",
+      "example": "MFHI $t0",
+      "use_cases": [
+        "Getting remainder after DIV",
+        "Getting upper 32 bits after MULT"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "AND": {
+      "opcode": "AND",
+      "description": "Bitwise AND.",
+      "category": "Logical",
+      "syntax": "AND rd, rs, rt",
+      "example": "AND $t0, $t1, $t2",
+      "use_cases": [
+        "Bit masking",
+        "Extracting bits"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "OR": {
+      "opcode": "OR",
+      "description": "Bitwise OR.",
+      "category": "Logical",
+      "syntax": "OR rd, rs, rt",
+      "example": "OR $t0, $t1, $t2",
+      "use_cases": [
+        "Setting bits",
+        "Combining flags"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "XOR": {
+      "opcode": "XOR",
+      "description": "Bitwise XOR.",
+      "category": "Logical",
+      "syntax": "XOR rd, rs, rt",
+      "example": "XOR $t0, $t1, $t2",
+      "use_cases": [
+        "Toggling bits",
+        "Zeroing registers"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "NOR": {
+      "opcode": "NOR",
+      "description": "Bitwise NOR: rd = ~(rs | rt).",
+      "category": "Logical",
+      "syntax": "NOR rd, rs, rt",
+      "example": "NOR $t0, $t1, $zero",
+      "use_cases": [
+        "Computing NOT: NOR rd, rs, $zero",
+        "NAND/NOR logic gates"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SLL": {
+      "opcode": "SLL",
+      "description": "Shift Left Logical: rd = rt << shamt.",
+      "category": "Shift",
+      "syntax": "SLL rd, rt, shamt",
+      "example": "SLL $t0, $t1, 2",
+      "use_cases": [
+        "Fast multiply by powers of 2",
+        "NOP is encoded as SLL $zero, $zero, 0"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SRL": {
+      "opcode": "SRL",
+      "description": "Shift Right Logical: rd = rt >> shamt.",
+      "category": "Shift",
+      "syntax": "SRL rd, rt, shamt",
+      "example": "SRL $t0, $t1, 4",
+      "use_cases": [
+        "Fast unsigned divide by powers of 2"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SRA": {
+      "opcode": "SRA",
+      "description": "Shift Right Arithmetic: rd = rt >>> shamt.",
+      "category": "Shift",
+      "syntax": "SRA rd, rt, shamt",
+      "example": "SRA $t0, $t1, 1",
+      "use_cases": [
+        "Fast signed divide by 2"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SLLV": {
+      "opcode": "SLLV",
+      "description": "Shift Left Logical Variable: rd = rt << rs.",
+      "category": "Shift",
+      "syntax": "SLLV rd, rt, rs",
+      "example": "SLLV $t0, $t1, $t2",
+      "use_cases": [
+        "Variable shift amount"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SRLV": {
+      "opcode": "SRLV",
+      "description": "Shift Right Logical Variable: rd = rt >> rs.",
+      "category": "Shift",
+      "syntax": "SRLV rd, rt, rs",
+      "example": "SRLV $t0, $t1, $t2",
+      "use_cases": [
+        "Variable unsigned right shift"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SLT": {
+      "opcode": "SLT",
+      "description": "Set Less Than (signed): rd = (rs < rt) ? 1 : 0.",
+      "category": "Comparison",
+      "syntax": "SLT rd, rs, rt",
+      "example": "SLT $t0, $t1, $t2",
+      "use_cases": [
+        "Signed comparison",
+        "Conditional logic"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SLTU": {
+      "opcode": "SLTU",
+      "description": "Set Less Than Unsigned.",
+      "category": "Comparison",
+      "syntax": "SLTU rd, rs, rt",
+      "example": "SLTU $t0, $t1, $t2",
+      "use_cases": [
+        "Unsigned comparison",
+        "Pointer comparison"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LW": {
+      "opcode": "LW",
+      "description": "Load Word: rt = mem[rs + offset].",
+      "category": "Load/Store",
+      "syntax": "LW rt, offset(rs)",
+      "example": "LW $t0, 0($sp)",
+      "use_cases": [
+        "Loading 32-bit values from stack or memory",
+        "Reading variables and array elements"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SW": {
+      "opcode": "SW",
+      "description": "Store Word: mem[rs + offset] = rt.",
+      "category": "Load/Store",
+      "syntax": "SW rt, offset(rs)",
+      "example": "SW $t0, 0($sp)",
+      "use_cases": [
+        "Storing 32-bit values to stack or memory",
+        "Writing variables and array elements"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LB": {
+      "opcode": "LB",
+      "description": "Load Byte (sign-extended).",
+      "category": "Load/Store",
+      "syntax": "LB rt, offset(rs)",
+      "example": "LB $t0, 0($a0)",
+      "use_cases": [
+        "Loading signed byte values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LBU": {
+      "opcode": "LBU",
+      "description": "Load Byte Unsigned.",
+      "category": "Load/Store",
+      "syntax": "LBU rt, offset(rs)",
+      "example": "LBU $t0, 0($a0)",
+      "use_cases": [
+        "Loading unsigned byte values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SB": {
+      "opcode": "SB",
+      "description": "Store Byte.",
+      "category": "Load/Store",
+      "syntax": "SB rt, offset(rs)",
+      "example": "SB $t0, 0($a0)",
+      "use_cases": [
+        "Storing single bytes"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LH": {
+      "opcode": "LH",
+      "description": "Load Halfword (sign-extended).",
+      "category": "Load/Store",
+      "syntax": "LH rt, offset(rs)",
+      "example": "LH $t0, 0($a0)",
+      "use_cases": [
+        "Loading signed 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LHU": {
+      "opcode": "LHU",
+      "description": "Load Halfword Unsigned.",
+      "category": "Load/Store",
+      "syntax": "LHU rt, offset(rs)",
+      "example": "LHU $t0, 0($a0)",
+      "use_cases": [
+        "Loading unsigned 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SH": {
+      "opcode": "SH",
+      "description": "Store Halfword.",
+      "category": "Load/Store",
+      "syntax": "SH rt, offset(rs)",
+      "example": "SH $t0, 0($a0)",
+      "use_cases": [
+        "Storing 16-bit values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "BEQ": {
+      "opcode": "BEQ",
+      "description": "Branch if Equal: if (rs == rt) branch.",
+      "category": "Control Flow",
+      "syntax": "BEQ rs, rt, offset",
+      "example": "BEQ $t0, $zero, done",
+      "use_cases": [
+        "Equality branching",
+        "Zero check: BEQ $t0, $zero, label"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "BNE": {
+      "opcode": "BNE",
+      "description": "Branch if Not Equal.",
+      "category": "Control Flow",
+      "syntax": "BNE rs, rt, offset",
+      "example": "BNE $t0, $zero, loop",
+      "use_cases": [
+        "Inequality check",
+        "Loop continuation"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "BGTZ": {
+      "opcode": "BGTZ",
+      "description": "Branch if Greater Than Zero.",
+      "category": "Control Flow",
+      "syntax": "BGTZ rs, offset",
+      "example": "BGTZ $t0, positive",
+      "use_cases": [
+        "Positive number branching"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "BLEZ": {
+      "opcode": "BLEZ",
+      "description": "Branch if Less or Equal to Zero.",
+      "category": "Control Flow",
+      "syntax": "BLEZ rs, offset",
+      "example": "BLEZ $t0, non_positive",
+      "use_cases": [
+        "Non-positive branching"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "J": {
+      "opcode": "J",
+      "description": "Jump: PC = target << 2.",
+      "category": "Control Flow",
+      "syntax": "J target",
+      "example": "J loop",
+      "use_cases": [
+        "Unconditional jump within 256MB region"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "JR": {
+      "opcode": "JR",
+      "description": "Jump Register: PC = rs.",
+      "category": "Control Flow",
+      "syntax": "JR rs",
+      "example": "JR $ra",
+      "use_cases": [
+        "Return from function: JR $ra",
+        "Indirect jumps",
+        "Switch dispatch"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "JAL": {
+      "opcode": "JAL",
+      "description": "Jump and Link: $ra = PC+4; PC = target << 2.",
+      "category": "Control Flow",
+      "syntax": "JAL target",
+      "example": "JAL function",
+      "use_cases": [
+        "Function calls: saves return address in $ra"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "JALR": {
+      "opcode": "JALR",
+      "description": "Jump and Link Register: rd = PC+4; PC = rs.",
+      "category": "Control Flow",
+      "syntax": "JALR rd, rs",
+      "example": "JALR $ra, $t0",
+      "use_cases": [
+        "Indirect function calls",
+        "Return: JALR $zero, $ra"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "LUI": {
+      "opcode": "LUI",
+      "description": "Load Upper Immediate: rt = imm << 16.",
+      "category": "Data Transfer",
+      "syntax": "LUI rt, imm",
+      "example": "LUI $t0, 0x1001",
+      "use_cases": [
+        "Loading upper 16 bits of a constant",
+        "Building 32-bit addresses"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SLTI": {
+      "opcode": "SLTI",
+      "description": "Set Less Than Immediate (signed).",
+      "category": "Comparison",
+      "syntax": "SLTI rt, rs, imm",
+      "example": "SLTI $t0, $t1, 10",
+      "use_cases": [
+        "Comparing with immediate values"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "ORI": {
+      "opcode": "ORI",
+      "description": "OR Immediate: rt = rs | imm.",
+      "category": "Logical",
+      "syntax": "ORI rt, rs, imm",
+      "example": "ORI $t0, $zero, 0xFF",
+      "use_cases": [
+        "Loading small constants",
+        "Setting lower 16 bits"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "ANDI": {
+      "opcode": "ANDI",
+      "description": "AND Immediate: rt = rs & imm.",
+      "category": "Logical",
+      "syntax": "ANDI rt, rs, imm",
+      "example": "ANDI $t0, $t1, 0xFF",
+      "use_cases": [
+        "Masking lower 16 bits"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "SYSCALL": {
+      "opcode": "SYSCALL",
+      "description": "System call.",
+      "category": "System",
+      "syntax": "SYSCALL",
+      "example": "SYSCALL",
+      "use_cases": [
+        "Making OS system calls"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    },
+    "NOP": {
+      "opcode": "NOP",
+      "description": "No Operation (SLL $zero, $zero, 0).",
+      "category": "Misc",
+      "syntax": "NOP",
+      "example": "NOP",
+      "use_cases": [
+        "Pipeline padding",
+        "Delay slot filling"
+      ],
+      "notes": "",
+      "architecture": "MIPS"
+    }
+  },
+  "concepts": [
+    {
+      "title": "What is Assembly Language?",
+      "category": "Fundamentals",
+      "content": "<h3>What is Assembly Language?</h3><p>Assembly language is a <b>low-level programming language</b> that provides a direct one-to-one mapping to machine code (binary instructions that the CPU executes). Each assembly instruction typically corresponds to a single machine instruction, giving programmers complete control over the hardware.</p><h4>Key Characteristics:</h4><ul><li><b>Hardware-Near:</b> Direct access to CPU registers, memory addresses, and I/O ports</li><li><b>Architecture-Specific:</b> x86 assembly differs from ARM, RISC-V, and MIPS assembly</li><li><b>Minimal Abstraction:</b> No objects, functions (just labels + CALL), or types</li><li><b>Maximum Control:</b> Exact cycle-level control over program execution</li><li><b>Extreme Performance:</b> Can optimize beyond what compilers achieve</li></ul><h4>Why Learn Assembly?</h4><ul><li>Understanding how computers <b>actually work</b> at the lowest level</li><li>Writing <b>performance-critical code</b> (game engines, DSP, cryptography)</li><li><b>Reverse engineering</b> and malware analysis</li><li>Writing <b>OS kernels</b>, bootloaders, and device drivers</li><li><b>Debugging</b> optimized code that you can only see in assembly</li><li>Understanding <b>compiler output</b> and optimization decisions</li></ul>"
+    },
+    {
+      "title": "CPU Registers",
+      "category": "Components",
+      "content": "<h3>CPU Registers</h3><p>Registers are the <b>fastest storage</b> in a computer, located directly inside the CPU. They are the primary workspace for all computation. Accessing a register takes 0-1 cycles, while memory access takes 100+ cycles.</p><h4>x86 Register Hierarchy:</h4><table style='width:100%'><tr><th>64-bit</th><th>Low 32</th><th>Low 16</th><th>Low 8</th><th>High 8</th><th>Typical Use</th></tr><tr><td>RAX</td><td>EAX</td><td>AX</td><td>AL</td><td>AH</td><td>Accumulator, return values</td></tr><tr><td>RBX</td><td>EBX</td><td>BX</td><td>BL</td><td>BH</td><td>Base (callee-saved)</td></tr><tr><td>RCX</td><td>ECX</td><td>CX</td><td>CL</td><td>CH</td><td>Counter (LOOP, shifts)</td></tr><tr><td>RDX</td><td>EDX</td><td>DX</td><td>DL</td><td>DH</td><td>Data (I/O, MUL/DIV)</td></tr><tr><td>RSI</td><td>ESI</td><td>SI</td><td>SIL</td><td>-</td><td>Source index (strings)</td></tr><tr><td>RDI</td><td>EDI</td><td>DI</td><td>DIL</td><td>-</td><td>Destination index</td></tr><tr><td>RBP</td><td>EBP</td><td>BP</td><td>BPL</td><td>-</td><td>Base pointer (stack frame)</td></tr><tr><td>RSP</td><td>ESP</td><td>SP</td><td>SPL</td><td>-</td><td>Stack pointer</td></tr><tr><td>RIP</td><td>EIP</td><td>IP</td><td>-</td><td>-</td><td>Instruction pointer (PC)</td></tr></table><h4>Special Registers:</h4><ul><li><b>EFLAGS/RFLAGS:</b> Status flags (ZF, CF, SF, OF, PF, DF, IF)</li><li><b>Segment Registers:</b> CS, DS, ES, FS, GS, SS (memory segmentation)</li><li><b>Control Registers:</b> CR0-CR4 (page tables, protected mode)</li><li><b>Debug Registers:</b> DR0-DR7 (hardware breakpoints)</li><li><b>MMX/XMM/YMM/ZMM:</b> SIMD vector registers (SSE, AVX)</li></ul>"
+    },
+    {
+      "title": "The Stack",
+      "category": "Components",
+      "content": "<h3>The Stack</h3><p>The stack is a <b>Last-In, First-Out (LIFO)</b> data structure that grows downward in memory (from high addresses to low addresses on x86). It is essential for function calls, local variables, and expression evaluation.</p><h4>Stack Operations:</h4><ul><li><b>PUSH src:</b> ESP -= 4; [ESP] = src (decrement first, then store)</li><li><b>POP dest:</b> dest = [ESP]; ESP += 4 (load first, then increment)</li></ul><h4>Stack Frame Layout (x86 cdecl):</h4><pre>[High Address]\n  | Return Address     | &lt;- Caller's PUSH args\n  | Arg 2              | \n  | Arg 1              | \n  | Return Address     | &lt;- CALL pushes this\n  | Saved EBP          | &lt;- PUSH EBP (prologue)\n  | Local Var 1        | &lt;- SUB ESP, N\n  | Local Var 2        | \n  ... ESP points here\n[Low Address]\n</pre><h4>Common Stack Patterns:</h4><ul><li><b>Save/Restore:</b> PUSH eax; ... code ...; POP eax</li><li><b>Function Prologue:</b> PUSH ebp; MOV ebp, esp; SUB esp, N</li><li><b>Function Epilogue:</b> MOV esp, ebp; POP ebp; RET</li><li><b> cdecl Cleanup:</b> Caller does ADD esp, 4*n after CALL</li><li><b> stdcall Cleanup:</b> CALLEE does RET n to clean args</li></ul>"
+    },
+    {
+      "title": "EFLAGS Register",
+      "category": "Components",
+      "content": "<h3>EFLAGS - Status Flags Register</h3><p>The EFLAGS register contains individual <b>status flags</b> that reflect the result of arithmetic and logical operations. Conditional jumps read these flags to make decisions.</p><table style='width:100%'><tr><th>Flag</th><th>Bit</th><th>Set When...</th><th>Used By</th></tr><tr><td><b>ZF</b></td><td>6</td><td>Result is zero</td><td>JE/JNE, JZ/JNZ</td></tr><tr><td><b>CF</b></td><td>0</td><td>Unsigned overflow (carry/borrow)</td><td>JB/JA, ADC/SBB, JC/JNC</td></tr><tr><td><b>SF</b></td><td>7</td><td>Result is negative (bit 31 = 1)</td><td>JS/JNS, JL/JG</td></tr><tr><td><b>OF</b></td><td>11</td><td>Signed overflow occurred</td><td>JO/JNO, JL/JG</td></tr><tr><td><b>PF</b></td><td>2</td><td>Even parity of low 8 bits</td><td>JP/JNP</td></tr><tr><td><b>AF</b></td><td>4</td><td>BCD carry from bit 3</td><td>AAA, AAS, DAA, DAS</td></tr><tr><td><b>DF</b></td><td>10</td><td>Direction flag (string ops)</td><td>CLD/STD, MOVS, STOS</td></tr><tr><td><b>IF</b></td><td>9</td><td>Interrupts enabled</td><td>CLI/STI, hardware IRQs</td></tr></table><h4>Flag Combinations for Jcc:</h4><table style='width:100%'><tr><th>Condition</th><th>Signed/Unsigned</th><th>Flag Test</th><th>C Equivalent</th></tr><tr><td>JE/JZ</td><td>Either</td><td>ZF=1</td><td>==</td></tr><tr><td>JNE/JNZ</td><td>Either</td><td>ZF=0</td><td>!=</td></tr><tr><td>JG</td><td>Signed</td><td>ZF=0 AND SF=OF</td><td>></td></tr><tr><td>JL</td><td>Signed</td><td>SF!=OF</td><td><</td></tr><tr><td>JGE</td><td>Signed</td><td>SF=OF</td><td>>=</td></tr><tr><td>JLE</td><td>Signed</td><td>ZF=1 OR SF!=OF</td><td><=</td></tr><tr><td>JA</td><td>Unsigned</td><td>CF=0 AND ZF=0</td><td>></td></tr><tr><td>JB</td><td>Unsigned</td><td>CF=1</td><td><</td></tr><tr><td>JAE</td><td>Unsigned</td><td>CF=0</td><td>>=</td></tr><tr><td>JBE</td><td>Unsigned</td><td>CF=1 OR ZF=1</td><td><=</td></tr></table>"
+    },
+    {
+      "title": "Memory Addressing Modes",
+      "category": "Components",
+      "content": "<h3>Memory Addressing Modes (x86)</h3><p>x86 supports several <b>addressing modes</b> for accessing memory operands. The general form is:</p><p><b>[base + index * scale + displacement]</b></p><table style='width:100%'><tr><th>Mode</th><th>Syntax</th><th>Example</th><th>Use Case</th></tr><tr><td>Immediate</td><td>imm</td><td>MOV eax, 42</td><td>Loading constants</td></tr><tr><td>Register</td><td>reg</td><td>MOV eax, ebx</td><td>Register-to-register</td></tr><tr><td>Direct</td><td>[addr]</td><td>MOV eax, [0x1000]</td><td>Global/static variables</td></tr><tr><td>Register Indirect</td><td>[reg]</td><td>MOV eax, [ebx]</td><td>Pointer dereference</td></tr><tr><td>Base + Displacement</td><td>[reg+disp]</td><td>MOV eax, [ebp-8]</td><td>Local variables, struct fields</td></tr><tr><td>Base + Index</td><td>[base+index]</td><td>MOV eax, [ebx+ecx]</td><td>2D array access</td></tr><tr><td>Base + Index * Scale</td><td>[base+idx*scale]</td><td>MOV eax, [ebx+ecx*4]</td><td>Array of 4-byte elements</td></tr><tr><td>Full Form</td><td>[base+idx*scale+disp]</td><td>MOV eax, [ebx+ecx*4+8]</td><td>struct.array[i].field</td></tr></table><h4>Scale Values:</h4><ul><li><b>1:</b> Byte arrays (char, uint8_t)</li><li><b>2:</b> Word arrays (short, uint16_t)</li><li><b>4:</b> Dword arrays (int, float, uint32_t)</li><li><b>8:</b> Qword arrays (long, double, uint64_t, pointers on x86-64)</li></ul>"
+    },
+    {
+      "title": "Calling Conventions",
+      "category": "Components",
+      "content": "<h3>Calling Conventions</h3><p>Calling conventions define how functions receive arguments and return values. They are a contract between the caller and callee that ensures consistent behavior across different compilation units and languages.</p><h4>x86-64 System V (Linux/macOS):</h4><ul><li><b>Arguments:</b> RDI, RSI, RDX, RCX, R8, R9 (in order), then stack</li><li><b>Return value:</b> RAX</li><li><b>Callee-saved:</b> RBX, RBP, R12-R15</li><li><b>Caller-saved:</b> RAX, RCX, RDX, RSI, RDI, R8-R11</li><li><b>Stack alignment:</b> 16-byte aligned before CALL</li></ul><h4>x86-64 Windows (Microsoft):</h4><ul><li><b>Arguments:</b> RCX, RDX, R8, R9, then stack</li><li><b>Return value:</b> RAX</li><li><b>Callee-saved:</b> RBX, RBP, RDI, RSI, R12-R15</li><li><b>Shadow space:</b> 32 bytes always allocated on stack</li></ul><h4>x86 32-bit cdecl:</h4><ul><li><b>Arguments:</b> Pushed right-to-left on stack</li><li><b>Return value:</b> EAX</li><li><b>Cleanup:</b> Caller cleans up stack (ADD esp, 4*n)</li><li><b>Callee-saved:</b> EBX, ESI, EDI, EBP</li></ul><h4>ARM64 (AAPCS64):</h4><ul><li><b>Arguments:</b> X0-X7</li><li><b>Return value:</b> X0</li><li><b>Callee-saved:</b> X19-X28, FP (X29), LR (X30)</li><li><b>Stack:</b> 16-byte aligned, full-descending</li></ul>"
+    },
+    {
+      "title": "Integer Representation",
+      "category": "Fundamentals",
+      "content": "<h3>How Computers Represent Numbers</h3><h4>Unsigned Integers:</h4><p>Simple binary representation. 8 bits: 0-255, 16 bits: 0-65535, 32 bits: 0-4,294,967,295.</p><h4>Signed Integers (Two's Complement):</h4><p>Two's complement is the universal representation for signed integers:</p><ul><li>Positive: Same as unsigned (e.g., 5 = 0000...0101)</li><li>Negative: Invert all bits and add 1 (e.g., -5 = ~5 + 1)</li><li>Range for 32-bit: -2,147,483,648 to 2,147,483,647</li><li>MSB (bit 31) is the sign bit: 0 = positive, 1 = negative</li></ul><h4>Hexadecimal Notation:</h4><p>Base-16 representation, each digit = 4 bits. Prefix: 0x. Commonly used in assembly.</p><ul><li>0x00 = 0, 0x0F = 15, 0x10 = 16, 0xFF = 255</li><li>0x80000000 = -2^31 (most negative 32-bit signed)</li><li>0xFFFFFFFF = -1 (32-bit signed)</li></ul><h4>Endianness:</h4><ul><li><b>Little-endian (x86):</b> Least significant byte first in memory</li><li><b>Big-endian (ARM, network):</b> Most significant byte first</li><li>Example: 0x12345678 stored as [78 56 34 12] (LE) or [12 34 56 78] (BE)</li></ul>"
+    },
+    {
+      "title": "Assemblers and Linking",
+      "category": "Fundamentals",
+      "content": "<h3>From Assembly to Executable</h3><h4>The Build Process:</h4><pre>source.asm --[Assembler]--> object.o --[Linker]--> executable\n</pre><h4>Popular Assemblers:</h4><table style='width:100%'><tr><th>Assembler</th><th>Syntax</th><th>Platform</th><th>Notes</th></tr><tr><td>NASM</td><td>Intel</td><td>Cross-platform</td><td>Most popular, clean syntax</td></tr><tr><td>GAS (GNU Assembler)</td><td>AT&T</td><td>Linux/macOS</td><td>Default with GCC, %prefix registers</td></tr><tr><td>MASM</td><td>Intel</td><td>Windows</td><td>Microsoft's assembler, rich macros</td></tr><tr><td>FASM</td><td>Intel</td><td>Cross-platform</td><td>Fast, self-hosting</td></tr><tr><td>LLVM-MC</td><td>Both</td><td>Cross-platform</td><td>Part of LLVM toolchain</td></tr></table><h4>Intel vs AT&T Syntax:</h4><table style='width:100%'><tr><th>Feature</th><th>Intel</th><th>AT&T</th></tr><tr><td>Operand order</td><td>dest, src</td><td>src, dest</td></tr><tr><td>Size suffix</td><td>DWORD PTR</td><td>l (long)</td></tr><tr><td>Register prefix</td><td>eax</td><td>%eax</td></tr><tr><td>Immediate prefix</td><td>42</td><td>$42</td></tr><tr><td>Dereference</td><td>[eax]</td><td>(%eax)</td></tr></table><h4>Common Assembler Directives:</h4><ul><li><b>section .text</b> - Code section</li><li><b>section .data</b> - Initialized data</li><li><b>section .bss</b> - Uninitialized data (zeroed)</li><li><b>global/main</b> - Export symbol</li><li><b>extern</b> - Import symbol</li><li><b>db/dw/dd/dq</b> - Define byte/word/dword/qword data</li><li><b>equ</b> - Define constant</li><li><b>times</b> - Repeat instruction</li><li><b>macro</b> - Define macro</li></ul>"
+    },
+    {
+      "title": "Common Assembly Patterns",
+      "category": "Patterns",
+      "content": "<h3>Common Assembly Patterns</h3><h4>If-Else:</h4><pre>CMP eax, ebx\nJGE .else\n  ; if branch (eax < ebx)\n  MOV eax, 0\n  JMP .endif\n.else:\n  ; else branch (eax >= ebx)\n  MOV eax, 1\n.endif:\n</pre><h4>For Loop (count up):</h4><pre>MOV ecx, 0      ; i = 0\n.loop:\n  CMP ecx, 10    ; i < 10\n  JGE .done\n  ; body: use ecx as i\n  INC ecx        ; i++\n  JMP .loop\n.done:\n</pre><h4>Function Call (cdecl):</h4><pre>; Caller:\nPUSH arg3\nPUSH arg2\nPUSH arg1\nCALL function\nADD esp, 12    ; clean 3 args * 4 bytes\n; result in EAX\n\n; Callee:\nfunction:\n  PUSH ebp      ; prologue\n  MOV ebp, esp\n  SUB esp, 8    ; local vars\n  ; ... body ...\n  MOV esp, ebp  ; epilogue\n  POP ebp\n  RET\n</pre><h4>Switch/Case (jump table):</h4><pre>CMP eax, 3\nJA .default\nJMP [jump_table + eax*4]\njump_table:\n  DD .case0\n  DD .case1\n  DD .case2\n</pre>"
+    }
+  ]
+}
